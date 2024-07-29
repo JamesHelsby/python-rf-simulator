@@ -152,15 +152,16 @@ def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, t
             bounds.set(key, value)
     
     pretty_xml = prettify(simconf)
-    filename = f"../simulations/{title_prefix}_{rows}x{cols}x{layers}_{success_ratio}_sim.csc"
+    print
+    filename = f"../Attack-the-BLOCC/simulations/{title_prefix}_{rows}x{cols}x{layers}_{success_ratio}_sim.csc"
     with open(filename, "w") as f:
         f.write(pretty_xml)
 
 
 if __name__ == "__main__":
     create_simulation_xml(
-        rows=1,
-        cols=1,
+        rows=2,
+        cols=2,
         layers=1,
         spacing_x=3, 
         spacing_y=12, 
