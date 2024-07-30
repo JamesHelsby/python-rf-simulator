@@ -1,10 +1,15 @@
 import os
 import re
 import sys
-from tqdm import tqdm
 
 def parse_log_entry(entry):
-    log_pattern = re.compile(r"(?P<message_num>\d+)\|(?P<origin_node>\d+)\|(?P<attesting_node>\d+)")
+    log_pattern = re.compile(
+        r"(?P<timestamp>\d+:\d{2}\.\d{3},\d{3})\s+"  # Timestamp
+        r"ID:\s*(?P<id>\d+)\s+"                      # ID
+        r"(?P<direction>Tx|Rx):\s*"                  # Direction
+        r"'(?P<message_num>\d+)\|(?P<origin_node>\d+)\|(?P<attesting_node>\d+)'(?:\sfrom node:\s'(?P<from_node>\d+)')?\s*->\s*"  # Message details
+        r"(?P<action>REQUEST|ATTESTATION RECEIVED)"  # Action
+    )
     match = log_pattern.search(entry)
     if match:
         return match.groupdict()
@@ -12,22 +17,34 @@ def parse_log_entry(entry):
 
 def update_progress_bars(progress_bars, entry, total_motes):
     key = f"{entry['message_num']}|{entry['origin_node']}"
-    if key not in progress_bars:
-        progress_bars[key] = {'progress': 0, 'total': -(-total_motes // 3), 'completed': False}
-    if not progress_bars[key]['completed']:
-        if int(entry['attesting_node']) != 0:
-            progress_bars[key]['progress'] += 1
-        if progress_bars[key]['progress'] >= progress_bars[key]['total']:
-            progress_bars[key]['progress'] = progress_bars[key]['total']
-            progress_bars[key]['completed'] = True
+    if entry['action'] == "REQUEST":
+        progress_bars[key] = {'progress': 0, 'total': total_motes}
+    if entry['action'] == "ATTESTATION RECEIVED":
+        progress_bars[key]['progress'] += 1
 
-def display_progress_bars(progress_bars):
-    os.system('clear')
+def display_progress_bars(progress_bars, total_motes):
+    bar_length = 50
+    notch = -(-total_motes // 3)
     for key, pb in progress_bars.items():
-        pbar = tqdm(total=pb['total'], position=0, desc=key, leave=True)
-        pbar.update(pb['progress'])
-        pbar.set_postfix_str(f"{pb['progress']}/{pb['total']}")
-        pbar.refresh()
+        progress = pb['progress']
+        total = pb['total']
+        filled_length = min(int(bar_length * progress // total), bar_length)
+        notch_position = min(int(bar_length * notch // total), bar_length - 1)
+
+        bar = ['-'] * bar_length
+        for i in range(filled_length):
+            if i < notch_position:
+                bar[i] = '█'
+            else:
+                bar[i] = '█' if progress >= notch else '-'
+
+        bar[notch_position] = '|'
+
+        bar_str = ''.join(bar)
+        if progress >= notch:
+            bar_str = f'\033[92m{bar_str}\033[0m'
+
+        print(f'\033[K{key}: |{bar_str}| {progress}/{total}', end='\r\n')
 
 def main():
     if len(sys.argv) != 3:
@@ -39,7 +56,6 @@ def main():
 
     if not os.path.exists(fifo_path):
         print(f"FIFO {fifo_path} does not exist.")
-        input("Here")
         return
 
     progress_bars = {}
@@ -50,10 +66,12 @@ def main():
             if line:
                 entry = parse_log_entry(line.strip())
                 if entry:
-                    update_progress_bars(progress_bars, entry, total_motes)
-                    display_progress_bars(progress_bars)
-            else:
-                break
+                    try:
+                        update_progress_bars(progress_bars, entry, total_motes)
+                        print('\033[H', end='')
+                        display_progress_bars(progress_bars, total_motes)                        
+                    except Exception as e:
+                        print(e)
 
 if __name__ == "__main__":
     main()

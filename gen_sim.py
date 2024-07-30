@@ -160,9 +160,9 @@ def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, t
 
 if __name__ == "__main__":
     create_simulation_xml(
-        rows=2,
-        cols=2,
-        layers=1,
+        rows=8,
+        cols=8,
+        layers=8,
         spacing_x=3, 
         spacing_y=12, 
         spacing_z=5,

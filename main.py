@@ -4,6 +4,8 @@ import re
 import xml.etree.ElementTree as ET
 from gen_sim import create_simulation_xml
 
+# 'gnome-terminal' or 'terminator' for remote
+REMOTE_TERMINAL = 'terminator'
 fifo_path = "/tmp/simulation_output_fifo"
 
 def create_fifo():
@@ -12,7 +14,15 @@ def create_fifo():
 
 def open_terminal_for_display(total_motes, fifo_path):
     command = f'python fifo_display_script.py {total_motes} {fifo_path}'
-    subprocess.Popen(['gnome-terminal', '--', 'bash', '-c', f'{command} && exec bash'])
+    try:
+        if REMOTE_TERMINAL == 'gnome-terminal':
+            subprocess.Popen(['gnome-terminal', '--', 'bash', '-c', f'{command} && exec bash'])
+        elif REMOTE_TERMINAL == 'terminator':
+            subprocess.Popen(['terminator', '-e', f'bash -c "{command} && exec bash"'])
+        else:
+            print(f"Unsupported terminal: {REMOTE_TERMINAL}")
+    except Exception as e:
+        print(f"Failed to open terminal: {e}")
 
 def parse_simulation_file(file_path):
     tree = ET.parse(f"../Attack-the-BLOCC/simulations/java_{file_path}_sim.csc")
@@ -71,15 +81,15 @@ def run_cooja_simulation(config):
 def main():
     create_fifo()
     config = {
-        "rows": 14,
+        "rows": 10,
         "cols": 10,
-        "layers": 12,
+        "layers": 10,
         "spacing_x": 3, 
         "spacing_y": 12, 
         "spacing_z": 5,
         "tx_range": 14, 
         "interference_range": 20, 
-        "success_ratio": 0.8,
+        "success_ratio": 1
     }
 
     process, total_motes = run_cooja_simulation(config)
