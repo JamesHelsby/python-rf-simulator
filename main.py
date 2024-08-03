@@ -1,111 +1,110 @@
-import os
-import subprocess
-import re
-import xml.etree.ElementTree as ET
-from gen_sim import create_simulation_xml
+from abc import ABC, abstractmethod
+import plotly.graph_objects as go
+import plotly.offline as pyo
+from ship_visualizer import plot_ship_layout
+from ship_analyzer import plot_container_network
 
-# 'gnome-terminal' or 'terminator' for remote
-REMOTE_TERMINAL = 'terminator'
-fifo_path = "/tmp/simulation_output_fifo"
 
-def create_fifo():
-    if not os.path.exists(fifo_path):
-        os.mkfifo(fifo_path)
-
-def open_terminal_for_display(total_motes, fifo_path):
-    command = f'python fifo_display_script.py {total_motes} {fifo_path}'
-    try:
-        if REMOTE_TERMINAL == 'gnome-terminal':
-            subprocess.Popen(['gnome-terminal', '--', 'bash', '-c', f'{command} && exec bash'])
-        elif REMOTE_TERMINAL == 'terminator':
-            subprocess.Popen(['terminator', '-e', f'bash -c "{command} && exec bash"'])
+class Ship:
+    def __init__(self):
+        self.bays = 5
+        self.rows = 5
+        self.layers = 5
+        self.cells = [[[Cell(x, y, z) for z in range(self.layers)] for y in range(self.rows)] for x in range(self.bays)]
+    
+    def add_container(self, container, x, y, z, position="front"):
+        cell = self.cells[x][y][z]
+        if not cell.container:
+            if isinstance(container, Small_Container):
+                if position not in ["front", "back"]:
+                    raise ValueError("Position must be 'front' or 'back' for small containers.")
+                cell.add_small_container(container, position)
+            elif isinstance(container, Standard_Container):
+                cell.add_standard_container(container)
+            else:
+                raise ValueError("Unknown container type.")
         else:
-            print(f"Unsupported terminal: {REMOTE_TERMINAL}")
-    except Exception as e:
-        print(f"Failed to open terminal: {e}")
+            print(f"Cell ({x}, {y}, {z}) is already occupied.")
 
-def parse_simulation_file(file_path):
-    tree = ET.parse(f"../Attack-the-BLOCC/simulations/java_{file_path}_sim.csc")
-    root = tree.getroot()
-    mote_count = 0
-    for node_type in root.findall(".//motetype"):
-        mote_count += len(node_type.findall(".//mote"))
-    return mote_count
 
-def parse_log_entry(entry):
-    log_pattern = re.compile(r"(?P<message_num>\d+)\|(?P<origin_node>\d+)\|(?P<attesting_node>\d+)")
-    match = log_pattern.search(entry)
-    if match:
-        return match.groupdict()
-    return None
+class Cell:
+    def __init__(self, x, y, z):
+        self.length = 12
+        self.width = 3
+        self.height = 5
+        self.x = x * self.length + self.length / 2
+        self.y = y * self.width + self.width / 2
+        self.z = z * self.height + self.height / 2
+        self.container = None
+        self.front_half = None
+        self.back_half = None
 
-def run_cooja_simulation(config):
-    rows = config['rows']
-    cols = config['cols']
-    layers = config['layers']
-    spacing_x = config['spacing_x']
-    spacing_y = config['spacing_y']
-    spacing_z = config['spacing_z']
-    tx_range = config['tx_range']
-    interference_range = config['interference_range']
-    success_ratio = config['success_ratio']
-    
-    create_simulation_xml(
-        rows=rows,
-        cols=cols,
-        layers=layers,
-        spacing_x=spacing_x,
-        spacing_y=spacing_y,
-        spacing_z=spacing_z,
-        tx_range=tx_range,
-        interference_range=interference_range,
-        success_ratio=success_ratio,
-        language="java"
-    )
+    def add_small_container(self, container, position):
+        if self.front_half and self.back_half:
+            print("Cell is fully occupied.")
+        elif position == "front" and not self.front_half:
+            self.front_half = container
+            container.x = self.x - self.length / 4
+            container.y = self.y
+            container.z = self.z
+            print("Small container added to the front.")
+        elif position == "back" and not self.back_half:
+            self.back_half = container
+            container.x = self.x + self.length / 4
+            container.y = self.y
+            container.z = self.z
+            print("Small container added to the back.")
+        else:
+            print(f"Cell's {position} is already occupied.")
 
-    simulation = f"{rows}x{cols}x{layers}_{success_ratio}"
-    total_motes = parse_simulation_file(simulation)
-    command = ['./gradlew', 'run', f"--args=--no-gui ../../simulations/java_{simulation}_sim.csc"]
-    working_directory = '../Attack-the-BLOCC/tools/cooja'
-    
-    process = subprocess.Popen(
-        command,
-        cwd=working_directory,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
+    def add_standard_container(self, container):
+        if self.front_half or self.back_half:
+            print("Cell cannot hold a standard container as it is partially occupied.")
+        else:
+            self.container = container
+            container.x = self.x
+            container.y = self.y
+            container.z = self.z
+            print("Standard container added.")
 
-    return process, total_motes
 
-def main():
-    create_fifo()
-    config = {
-        "rows": 10,
-        "cols": 10,
-        "layers": 10,
-        "spacing_x": 3, 
-        "spacing_y": 12, 
-        "spacing_z": 5,
-        "tx_range": 14, 
-        "interference_range": 20, 
-        "success_ratio": 1
-    }
+class Container(ABC):
+    @abstractmethod
+    def __init__(self, length, width, height):
+        self.length = length
+        self.width = width
+        self.height = height
+        self.rf_radius = 14
+        self.x = None
+        self.y = None
+        self.z = None
 
-    process, total_motes = run_cooja_simulation(config)
-    open_terminal_for_display(total_motes, fifo_path)
 
-    try:
-        with open(fifo_path, 'w') as fifo:
-            while True:
-                output = process.stdout.readline().strip()
-                if output:
-                    fifo.write(output.strip() + '\n')
-                    fifo.flush()
-                print(output)
-                
-    finally:
-        os.remove(fifo_path)
+class Standard_Container(Container):
+    def __init__(self):
+        super().__init__(length=12, width=3, height=5)
+
+
+class Small_Container(Container):
+    def __init__(self):
+        super().__init__(length=6, width=3, height=5)
+
+
+def combine_plots(fig1, fig2):
+    fig = go.Figure(data=fig1.data + fig2.data)
+    fig.update_layout(scene=fig1.layout.scene)
+    pyo.plot(fig, filename='combined_plot.html', auto_open=True)
+
 
 if __name__ == "__main__":
-    main()
+    ship = Ship()
+
+    ship.add_container(Standard_Container(), 0, 0, 0)
+    ship.add_container(Small_Container(), 1, 0, 0, "front")
+    ship.add_container(Small_Container(), 1, 0, 0, "back")
+    ship.add_container(Standard_Container(), 1, 0, 1)
+
+    ship_plot = plot_ship_layout(ship, display=True)
+    network_plot = plot_container_network(ship, display=True)
+    combine_plots(ship_plot, network_plot)
+    

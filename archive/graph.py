@@ -281,3 +281,7 @@ def find_node_with_honest_neighbors(G, malicious_nodes):
             node_found += 1
 
     return node_found
+
+
+if __name__ == "__main__":
+    
