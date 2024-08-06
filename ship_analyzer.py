@@ -7,7 +7,7 @@ from tqdm import tqdm
 def generate_container_network(ship):
     G = nx.Graph()
 
-    for x in tqdm(range(ship.bays), desc="Building graph      "):
+    for x in tqdm(range(ship.bays), desc="Building nodes      "):
         for y in range(ship.rows):
             for z in range(ship.layers):
                 cell = ship.cells[x][y][z]
@@ -22,7 +22,7 @@ def generate_container_network(ship):
                     G.add_node(node_id, pos=(cell.back_half.x, cell.back_half.y, cell.back_half.z), container='small_back', rf_radius=cell.back_half.rf_radius, malicious=cell.back_half.malicious, jammer=cell.back_half.jammer)
 
     nodes = list(G.nodes(data=True))
-    for i, (node1, data1) in enumerate(nodes):
+    for i, (node1, data1) in tqdm(enumerate(nodes), total=len(nodes), desc="Building edges      "):
         if data1['malicious']:
             continue
         for j, (node2, data2) in enumerate(nodes):
@@ -33,6 +33,8 @@ def generate_container_network(ship):
                 rf_radius = min(data1['rf_radius'], data2['rf_radius'])
                 if dist <= rf_radius:
                     G.add_edge(node1, node2)
+
+    print("Here")
 
     for node, data in G.nodes(data=True):
         if data['jammer']:
@@ -51,15 +53,23 @@ def generate_container_network(ship):
                     for neighbor in neighbors:
                         G.remove_edge(target_node, neighbor)
 
+    print("Here")
+    
     return G
 
 
 def analyse_graph(G):
+    print("1")
     total_nodes = len(G.nodes())
+    print("2")
     unconnected_nodes = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]
+    print("3")
     num_unconnected_nodes = len(unconnected_nodes)
+    print("4")
     num_connected_nodes = total_nodes - num_unconnected_nodes
+    print("5")
     connected_components = nx.number_connected_components(G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0]))
+    print("6")
 
     num_connected = total_nodes - num_unconnected_nodes
     threshold = -(-total_nodes // 3)  # Equivalent to math.ceil(total_nodes / 3)
@@ -75,8 +85,9 @@ def analyse_graph(G):
 
     print(f"\nTotal nodes   : {total_nodes}")
     print(f"  Connected   : {num_connected_nodes}")
-    print(f"  Unconnected : {num_unconnected_nodes}\n")
-    print(f"Components    : {connected_components}")
+    print(f"  Unconnected : {num_unconnected_nodes}")
+    print(f"  Affected    : {(num_unconnected_nodes / total_nodes):.2%}\n")
+    print(f"Components    : {connected_components}\n")
     print(f"Health        : {health:.2%}\n")
     print(f"Status        : {status}\n")
     

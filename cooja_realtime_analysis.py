@@ -81,9 +81,9 @@ def run_cooja_simulation(config):
 def main():
     create_fifo()
     config = {
-        "rows": 2,
-        "cols": 2,
-        "layers": 1,
+        "rows": 25,
+        "cols": 25,
+        "layers": 25,
         "spacing_x": 3, 
         "spacing_y": 12, 
         "spacing_z": 5,

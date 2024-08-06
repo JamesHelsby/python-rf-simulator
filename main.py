@@ -14,7 +14,7 @@ class Ship:
     def __init__(self):
         self.bays = 10
         self.rows = 10
-        self.layers = 6
+        self.layers = 10
         self.cells = [[[Cell(x, y, z) for z in range(self.layers)] for y in range(self.rows)] for x in range(self.bays)]
     
     def add_container(self, container, x, y, z, position="front"):
@@ -153,10 +153,11 @@ if __name__ == "__main__":
     ship.add_containers(":-2", ":", ":", "standard")
     # ship.add_containers(":", ":-1", ":-2", "standard")
 
-    # ship.set_behaviour("3:4", "4:5", "2:3", malicious=False, jammer=True)
-    ship.set_behaviour("0:5", ":", ":", malicious=True)
-    ship.set_behaviour("5:6", ":", ":2", malicious=True)
-    ship.set_behaviour("5:6", ":1", "1:2", malicious=False)
+    ship.set_behaviour("3:4", "4:5", "2:3", malicious=False, jammer=True)
+    ship.set_behaviour("5:6", "5:6", "3:4", malicious=False, jammer=True)
+    # ship.set_behaviour("0:5", ":", ":", malicious=True)
+    # ship.set_behaviour("5:6", ":", ":2", malicious=True)
+    # ship.set_behaviour("5:6", ":1", "1:2", malicious=False)
 
     G = generate_container_network(ship)
     analyse_graph(G)
