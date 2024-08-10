@@ -4,72 +4,12 @@ import networkx as nx
 from tqdm import tqdm
 
 
-def generate_container_network(ship):
-    G = nx.Graph()
-
-    for x in tqdm(range(ship.bays), desc="Building nodes      "):
-        for y in range(ship.rows):
-            for z in range(ship.layers):
-                cell = ship.cells[x][y][z]
-                if cell.container:
-                    node_id = f"C({x},{y},{z})"
-                    G.add_node(node_id, pos=(cell.x, cell.y, cell.z), container='standard', rf_radius=cell.container.rf_radius, malicious=cell.container.malicious, jammer=cell.container.jammer)
-                if cell.front_half:
-                    node_id = f"F({x},{y},{z})"
-                    G.add_node(node_id, pos=(cell.front_half.x, cell.front_half.y, cell.front_half.z), container='small_front', rf_radius=cell.front_half.rf_radius, malicious=cell.front_half.malicious, jammer=cell.front_half.jammer)
-                if cell.back_half:
-                    node_id = f"B({x},{y},{z})"
-                    G.add_node(node_id, pos=(cell.back_half.x, cell.back_half.y, cell.back_half.z), container='small_back', rf_radius=cell.back_half.rf_radius, malicious=cell.back_half.malicious, jammer=cell.back_half.jammer)
-
-    nodes = list(G.nodes(data=True))
-    for i, (node1, data1) in tqdm(enumerate(nodes), total=len(nodes), desc="Building edges      "):
-        if data1['malicious']:
-            continue
-        for j, (node2, data2) in enumerate(nodes):
-            if i < j and not data2['malicious']:
-                dist = ((data1['pos'][0] - data2['pos'][0]) ** 2 + 
-                        ((data1['pos'][1] - data2['pos'][1]) ** 2) +
-                        ((data1['pos'][2] - data2['pos'][2]) ** 2)) ** 0.5
-                rf_radius = min(data1['rf_radius'], data2['rf_radius'])
-                if dist <= rf_radius:
-                    G.add_edge(node1, node2)
-
-    print("Here")
-
-    for node, data in G.nodes(data=True):
-        if data['jammer']:
-            nodes_to_disconnect = []
-            for other_node, other_data in G.nodes(data=True):
-                if other_node != node:
-                    dist = ((data['pos'][0] - other_data['pos'][0]) ** 2 + 
-                            ((data['pos'][1] - other_data['pos'][1]) ** 2) +
-                            ((data['pos'][2] - other_data['pos'][2]) ** 2)) ** 0.5
-                    if dist <= data['rf_radius']:
-                        nodes_to_disconnect.append(other_node)
-
-            for target_node in nodes_to_disconnect:
-                if G.has_node(target_node):
-                    neighbors = list(G.neighbors(target_node))
-                    for neighbor in neighbors:
-                        G.remove_edge(target_node, neighbor)
-
-    print("Here")
-    
-    return G
-
-
 def analyse_graph(G):
-    print("1")
-    total_nodes = len(G.nodes())
-    print("2")
-    unconnected_nodes = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]
-    print("3")
-    num_unconnected_nodes = len(unconnected_nodes)
-    print("4")
-    num_connected_nodes = total_nodes - num_unconnected_nodes
-    print("5")
-    connected_components = nx.number_connected_components(G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0]))
-    print("6")
+    total_nodes = len(G.nodes())    
+    unconnected_nodes = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]    
+    num_unconnected_nodes = len(unconnected_nodes)    
+    num_connected_nodes = total_nodes - num_unconnected_nodes    
+    connected_components = nx.number_connected_components(G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0]))    
 
     num_connected = total_nodes - num_unconnected_nodes
     threshold = -(-total_nodes // 3)  # Equivalent to math.ceil(total_nodes / 3)
@@ -101,9 +41,11 @@ def analyse_graph(G):
     }
 
 
-def plot_container_network(ship, G=None, display=True):
-    if G is None:
-        G = generate_container_network(ship)
+def plot_container_network(ship, display=True):
+    if ship.G is None:
+        ship.generate_container_graph()
+    
+    G = ship.G
 
     pos = nx.get_node_attributes(G, 'pos')
     labels = nx.get_node_attributes(G, 'container')

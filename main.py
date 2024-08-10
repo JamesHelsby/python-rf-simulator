@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 import plotly.graph_objects as go
 import plotly.offline as pyo
+import networkx as nx
+from tqdm import tqdm
 from ship_visualizer import plot_ship_layout
-from ship_analyzer import generate_container_network, analyse_graph, plot_container_network
+from ship_analyzer import analyse_graph, plot_container_network
 
 
 RF_RADIUS = 12
@@ -12,10 +14,26 @@ JAMMER_RF_RADIUS_MULTIPLE = 1
 
 class Ship:
     def __init__(self):
-        self.bays = 10
-        self.rows = 10
-        self.layers = 10
+        self.bays = 3
+        self.rows = 24
+        self.layers = 25
         self.cells = [[[Cell(x, y, z) for z in range(self.layers)] for y in range(self.rows)] for x in range(self.bays)]
+        
+        self.G = None
+
+        self.model = 'log-normal'
+        self.model_params = {
+            'P_t': 0,    # Transmit power in dBm
+            'beta': 2,   # Path loss exponent (for log-normal)
+            'sigma': 2,  # Shadowing variance (for log-normal) or Rayleigh/Ricean scale
+            'v': 1,      # Ricean LOS component
+            'frequency': 2.4e9  # Frequency in Hz for free-space model
+        }
+
+    def set_model(self, model, model_params=None):        
+        self.model = model
+        if model_params:
+            self.model_params.update(model_params)
     
     def add_container(self, container, x, y, z, position="front"):
         cell = self.cells[x][y][z]
@@ -68,6 +86,87 @@ class Ship:
                         cell.back_half.malicious = malicious
                         cell.back_half.jammer = jammer
                         cell.back_half.rf_radius = RF_RADIUS * INTERFERENCE_RATIO * JAMMER_RF_RADIUS_MULTIPLE if jammer else RF_RADIUS
+
+        def generate_container_graph(self):
+        G = nx.Graph()
+
+        for x in tqdm(range(self.bays), desc="Building nodes       "):
+            for y in range(self.rows):
+                for z in range(self.layers):
+                    cell = self.cells[x][y][z]
+                    if cell.container:
+                        node_id = f"C({x},{y},{z})"
+                        G.add_node(node_id, pos=(cell.x, cell.y, cell.z), container='standard', rf_radius=cell.container.rf_radius, malicious=cell.container.malicious, jammer=cell.container.jammer)
+                    if cell.front_half:
+                        node_id = f"F({x},{y},{z})"
+                        G.add_node(node_id, pos=(cell.front_half.x, cell.front_half.y, cell.front_half.z), container='small_front', rf_radius=cell.front_half.rf_radius, malicious=cell.front_half.malicious, jammer=cell.front_half.jammer)
+                    if cell.back_half:
+                        node_id = f"B({x},{y},{z})"
+                        G.add_node(node_id, pos=(cell.back_half.x, cell.back_half.y, cell.back_half.z), container='small_back', rf_radius=cell.back_half.rf_radius, malicious=cell.back_half.malicious, jammer=cell.back_half.jammer)
+        
+        nodes = list(G.nodes(data=True))
+        for i, (node1, data1) in tqdm(enumerate(nodes), total=len(nodes), desc="Building edges       "):
+            if data1['malicious']:
+                continue
+            for j, (node2, data2) in enumerate(nodes):
+                if i < j and not data2['malicious']:
+                    dist = ((data1['pos'][0] - data2['pos'][0]) ** 2 + 
+                            ((data1['pos'][1] - data2['pos'][1]) ** 2) +
+                            ((data1['pos'][2] - data2['pos'][2]) ** 2)) ** 0.5
+                    
+                    signal_strength = calculate_signal_strength(dist, self.model, self.model_params)
+                    
+                    threshold = -80
+                    if signal_strength > threshold:
+                        G.add_edge(node1, node2)
+        
+        for node, data in tqdm(G.nodes(data=True), desc="Removing jammed edges"):
+            if data['jammer']:
+                nodes_to_disconnect = []
+                for other_node, other_data in G.nodes(data=True):
+                    if other_node != node:
+                        dist = ((data['pos'][0] - other_data['pos'][0]) ** 2 + 
+                                ((data['pos'][1] - other_data['pos'][1]) ** 2) +
+                                ((data['pos'][2] - other_data['pos'][2]) ** 2)) ** 0.5
+                        if dist <= data['rf_radius']:
+                            nodes_to_disconnect.append(other_node)
+
+                for target_node in nodes_to_disconnect:
+                    if G.has_node(target_node):
+                        neighbors = list(G.neighbors(target_node))
+                        for neighbor in neighbors:
+                            G.remove_edge(target_node, neighbor)
+
+        self.G = G
+
+
+def calculate_signal_strength(distance, model, model_params):
+    if model == 'log-normal':
+        # Log-Normal Shadowing Model
+        P_t = model_params.get('P_t', 0)      # Transmit power in dBm
+        beta = model_params.get('beta', 2)    # Path loss exponent
+        sigma = model_params.get('sigma', 2)  # Standard deviation of shadowing
+        return P_t - 10 * beta * np.log10(distance) + np.random.normal(0, sigma)
+
+    elif model == 'rayleigh':
+        # Rayleigh Fading Model
+        sigma = model_params.get('sigma', 1)  # Scale parameter for Rayleigh distribution
+        return np.random.rayleigh(scale=sigma)
+
+    elif model == 'ricean':
+        # Ricean Fading Model
+        v = model_params.get('v', 1)          # LOS component
+        sigma = model_params.get('sigma', 1)  # Scattered component
+        return np.random.rice(v, sigma)
+
+    elif model == 'free-space':
+        # Free Space Path Loss (FSPL) Model
+        f = model_params.get('frequency', 2.4e9)  # Frequency in Hz (e.g., 2.4 GHz)
+        c = 3e8                                   # Speed of light in m/s
+        return 20 * np.log10(distance) + 20 * np.log10(f) - 20 * np.log10(c / (4 * np.pi))
+
+    else:
+        raise ValueError(f"Unknown model type: {model}")
 
 
 class Cell:
@@ -150,19 +249,23 @@ def combine_plots(fig1, fig2):
 if __name__ == "__main__":
     ship = Ship()
 
-    ship.add_containers(":-2", ":", ":", "standard")
+    ship.add_containers(":", ":", ":", "standard")
     # ship.add_containers(":", ":-1", ":-2", "standard")
 
-    ship.set_behaviour("3:4", "4:5", "2:3", malicious=False, jammer=True)
-    ship.set_behaviour("5:6", "5:6", "3:4", malicious=False, jammer=True)
-    # ship.set_behaviour("0:5", ":", ":", malicious=True)
-    # ship.set_behaviour("5:6", ":", ":2", malicious=True)
-    # ship.set_behaviour("5:6", ":1", "1:2", malicious=False)
+    # ship.set_behaviour(":", ":", ":", malicious=True, jammer=False)
 
-    G = generate_container_network(ship)
-    analyse_graph(G)
+    ship.set_behaviour("1:2", "0:1", "0:1", malicious=False, jammer=True)
+    ship.set_behaviour("1:2", "0:1", "-1:", malicious=False, jammer=True)
+    ship.set_behaviour("1:2", "-1:", "0:1", malicious=False, jammer=True)
+    ship.set_behaviour("1:2", "-1:", "-1:", malicious=False, jammer=True)
+
+    # ship.set_behaviour("1:2", "6:7", "-3:-2", malicious=False, jammer=True)
+    # ship.set_behaviour(":1", "5:6", "2:3", malicious=False, jammer=True)
+
+    ship.generate_container_graph()
+    analyse_graph(ship.G)
 
     # ship_plot = plot_ship_layout(ship, display=False)
-    network_plot = plot_container_network(ship, G, display=True)    
+    network_plot = plot_container_network(ship, display=True)    
     # combine_plots(ship_plot, network_plot)
     
