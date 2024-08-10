@@ -9,16 +9,16 @@ from ship_visualizer import plot_ship_layout
 from ship_analyzer import analyse_graph, plot_container_network
 
 
-TRANSMIT_POWER = -15
-COMMUNICATION_THRESHOLD = -80
-JAMMER_POWER = -15
+TRANSMIT_POWER = 0
+COMMUNICATION_THRESHOLD = -65
+JAMMER_POWER = 0
 
 
 class Ship:
     def __init__(self):
-        self.bays = 3
-        self.rows = 24
-        self.layers = 25
+        self.bays = 15
+        self.rows = 15
+        self.layers = 15
         self.cells = [[[Cell(x, y, z) for z in range(self.layers)] for y in range(self.rows)] for x in range(self.bays)]
         
         self.G = None
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
     ship.add_containers(":", ":", ":", "standard")
 
-    ship.set_max_nodes_in_plane('bays', 1, 3.5, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)
+    ship.set_max_nodes_in_plane('bays', 8, 3.4, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)
 
     # ship.set_behaviour([1], [0], [0], malicious=True, jammer=True, transmit_power=JAMMER_POWER)
 

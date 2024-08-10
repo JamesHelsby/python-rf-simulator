@@ -40,22 +40,10 @@ def analyse_graph(G):
     print(f"Total Malicious Nodes   : {num_malicious}")
     print(f"  Non-Jamming Malicious : {num_non_jamming_malicious}")
     print(f"  Jamming Malicious     : {num_jamming}\n")
-    print(f"Health                  : {health:.2%}\n")
+    # print(f"Health                  : {health:.2%}\n")
     print(f"Components              : {connected_components}\n")
     print(f"Status                  : {status}\n")
 
-    return {
-        'total_nodes': total_nodes,
-        'num_connected': num_connected,
-        'num_unconnected': num_unconnected_nodes,
-        'components': connected_components,
-        'health': health,
-        'status': status,
-        'num_honest': num_honest,
-        'num_malicious': num_malicious,
-        'num_non_jamming_malicious': num_non_jamming_malicious,
-        'num_jamming': num_jamming
-    }
 
 
 
