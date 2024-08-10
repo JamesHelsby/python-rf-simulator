@@ -2,14 +2,16 @@ from abc import ABC, abstractmethod
 import plotly.graph_objects as go
 import plotly.offline as pyo
 import networkx as nx
+import numpy as np
+import random
 from tqdm import tqdm
 from ship_visualizer import plot_ship_layout
 from ship_analyzer import analyse_graph, plot_container_network
 
 
-RF_RADIUS = 12
-INTERFERENCE_RATIO = 1
-JAMMER_RF_RADIUS_MULTIPLE = 1
+TRANSMIT_POWER = -15
+COMMUNICATION_THRESHOLD = -80
+JAMMER_POWER = -15
 
 
 class Ship:
@@ -23,7 +25,6 @@ class Ship:
 
         self.model = 'log-normal'
         self.model_params = {
-            'P_t': 0,    # Transmit power in dBm
             'beta': 2,   # Path loss exponent (for log-normal)
             'sigma': 2,  # Shadowing variance (for log-normal) or Rayleigh/Ricean scale
             'v': 1,      # Ricean LOS component
@@ -65,10 +66,9 @@ class Ship:
                     else:
                         raise ValueError("Unknown container type.")
 
-    def set_behaviour(self, x_slice, y_slice, z_slice, malicious=False, jammer=False):
-        x_range = eval(f"range(self.bays)[{x_slice}]")
-        y_range = eval(f"range(self.rows)[{y_slice}]")
-        z_range = eval(f"range(self.layers)[{z_slice}]")
+    def set_behaviour(self, x_range, y_range, z_range, malicious=False, jammer=False, transmit_power=TRANSMIT_POWER):
+        if jammer:
+            malicious = True
 
         for x in x_range:
             for y in y_range:
@@ -77,93 +77,115 @@ class Ship:
                     if cell.container:
                         cell.container.malicious = malicious
                         cell.container.jammer = jammer
-                        cell.container.rf_radius = RF_RADIUS * INTERFERENCE_RATIO * JAMMER_RF_RADIUS_MULTIPLE if jammer else RF_RADIUS
+                        cell.container.transmit_power = transmit_power
                     if cell.front_half:
                         cell.front_half.malicious = malicious
                         cell.front_half.jammer = jammer
-                        cell.front_half.rf_radius = RF_RADIUS * INTERFERENCE_RATIO * JAMMER_RF_RADIUS_MULTIPLE if jammer else RF_RADIUS
+                        cell.front_half.transmit_power = transmit_power
                     if cell.back_half:
                         cell.back_half.malicious = malicious
                         cell.back_half.jammer = jammer
-                        cell.back_half.rf_radius = RF_RADIUS * INTERFERENCE_RATIO * JAMMER_RF_RADIUS_MULTIPLE if jammer else RF_RADIUS
+                        cell.back_half.transmit_power = transmit_power
 
-        def generate_container_graph(self):
+    def set_max_nodes_in_plane(self, plane, index, min_distance, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
+        if plane not in ["bays", "rows", "layers"]:
+            raise ValueError("Plane must be 'bays', 'rows', or 'layers'.")
+
+        if plane == "bays":
+            nodes_in_plane = [(index, y, z) for y in range(self.rows) for z in range(self.layers)]
+        elif plane == "rows":
+            nodes_in_plane = [(x, index, z) for x in range(self.bays) for z in range(self.layers)]
+        elif plane == "layers":
+            nodes_in_plane = [(x, y, index) for x in range(self.bays) for y in range(self.rows)]
+
+        selected_nodes = []
+
+        while nodes_in_plane:
+            node = random.choice(nodes_in_plane)
+            nodes_in_plane.remove(node)
+
+            if all(self._distance(node, selected_node) >= min_distance for selected_node in selected_nodes):
+                selected_nodes.append(node)
+                x, y, z = node
+                self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)
+
+        # return selected_nodes
+
+    def generate_container_graph(self):        
         G = nx.Graph()
-
+        
+        # Step 1: Build nodes
         for x in tqdm(range(self.bays), desc="Building nodes       "):
             for y in range(self.rows):
                 for z in range(self.layers):
                     cell = self.cells[x][y][z]
                     if cell.container:
                         node_id = f"C({x},{y},{z})"
-                        G.add_node(node_id, pos=(cell.x, cell.y, cell.z), container='standard', rf_radius=cell.container.rf_radius, malicious=cell.container.malicious, jammer=cell.container.jammer)
+                        G.add_node(node_id, pos=(cell.x, cell.y, cell.z), container='standard', transmit_power=cell.container.transmit_power, malicious=cell.container.malicious, jammer=cell.container.jammer)
                     if cell.front_half:
                         node_id = f"F({x},{y},{z})"
-                        G.add_node(node_id, pos=(cell.front_half.x, cell.front_half.y, cell.front_half.z), container='small_front', rf_radius=cell.front_half.rf_radius, malicious=cell.front_half.malicious, jammer=cell.front_half.jammer)
+                        G.add_node(node_id, pos=(cell.front_half.x, cell.front_half.y, cell.front_half.z), container='small_front', transmit_power=cell.front_half.transmit_power, malicious=cell.front_half.malicious, jammer=cell.front_half.jammer)
                     if cell.back_half:
                         node_id = f"B({x},{y},{z})"
-                        G.add_node(node_id, pos=(cell.back_half.x, cell.back_half.y, cell.back_half.z), container='small_back', rf_radius=cell.back_half.rf_radius, malicious=cell.back_half.malicious, jammer=cell.back_half.jammer)
+                        G.add_node(node_id, pos=(cell.back_half.x, cell.back_half.y, cell.back_half.z), container='small_back', transmit_power=cell.back_half.transmit_power, malicious=cell.back_half.malicious, jammer=cell.back_half.jammer)
         
+        # Step 2: Build edges based on signal strength
         nodes = list(G.nodes(data=True))
         for i, (node1, data1) in tqdm(enumerate(nodes), total=len(nodes), desc="Building edges       "):
             if data1['malicious']:
                 continue
             for j, (node2, data2) in enumerate(nodes):
                 if i < j and not data2['malicious']:
-                    dist = ((data1['pos'][0] - data2['pos'][0]) ** 2 + 
-                            ((data1['pos'][1] - data2['pos'][1]) ** 2) +
-                            ((data1['pos'][2] - data2['pos'][2]) ** 2)) ** 0.5
-                    
-                    signal_strength = calculate_signal_strength(dist, self.model, self.model_params)
-                    
-                    threshold = -80
-                    if signal_strength > threshold:
-                        G.add_edge(node1, node2)
-        
-        for node, data in tqdm(G.nodes(data=True), desc="Removing jammed edges"):
-            if data['jammer']:
-                nodes_to_disconnect = []
-                for other_node, other_data in G.nodes(data=True):
-                    if other_node != node:
-                        dist = ((data['pos'][0] - other_data['pos'][0]) ** 2 + 
-                                ((data['pos'][1] - other_data['pos'][1]) ** 2) +
-                                ((data['pos'][2] - other_data['pos'][2]) ** 2)) ** 0.5
-                        if dist <= data['rf_radius']:
-                            nodes_to_disconnect.append(other_node)
+                    dist = self._distance(data1['pos'], data2['pos'])
+                    signal_strength = calculate_signal_strength(dist, data1['transmit_power'], self.model, self.model_params)
 
-                for target_node in nodes_to_disconnect:
-                    if G.has_node(target_node):
+                    if signal_strength > COMMUNICATION_THRESHOLD:
+                        G.add_edge(node1, node2, signal_strength=signal_strength)
+
+        # Step 3: Process jammers and remove weaker edges
+        for jammer_node, jammer_data in tqdm(G.nodes(data=True), desc="Processing jammers   "):
+            if jammer_data['jammer']:
+                for target_node, target_data in G.nodes(data=True):
+                    if jammer_node != target_node:
+                        dist = self._distance(jammer_data['pos'], target_data['pos'])
+                        jamming_strength = calculate_signal_strength(dist, jammer_data['transmit_power'], self.model, self.model_params)
+
                         neighbors = list(G.neighbors(target_node))
                         for neighbor in neighbors:
-                            G.remove_edge(target_node, neighbor)
+                            edge_data = G.get_edge_data(target_node, neighbor)
+                            if edge_data:
+                                neighbor_signal_strength = edge_data['signal_strength']
+                                if jamming_strength > neighbor_signal_strength:
+                                    G.remove_edge(target_node, neighbor)
 
         self.G = G
 
+    def _distance(self, pos1, pos2):
+        x1, y1, z1 = pos1
+        x2, y2, z2 = pos2
+        return ((x1 - x2) ** 2 + (y1 - y2) ** 2 + (z1 - z2) ** 2) ** 0.5
 
-def calculate_signal_strength(distance, model, model_params):
-    if model == 'log-normal':
-        # Log-Normal Shadowing Model
-        P_t = model_params.get('P_t', 0)      # Transmit power in dBm
-        beta = model_params.get('beta', 2)    # Path loss exponent
-        sigma = model_params.get('sigma', 2)  # Standard deviation of shadowing
+
+def calculate_signal_strength(distance, P_t, model, model_params):
+    if model == 'log-normal':                     # Log-Normal Shadowing Model
+        beta = model_params.get('beta', 2)        # Path loss exponent
+        sigma = model_params.get('sigma', 2)      # Standard deviation of shadowing
         return P_t - 10 * beta * np.log10(distance) + np.random.normal(0, sigma)
 
-    elif model == 'rayleigh':
-        # Rayleigh Fading Model
-        sigma = model_params.get('sigma', 1)  # Scale parameter for Rayleigh distribution
+    elif model == 'rayleigh':                     # Rayleigh Fading Model
+        sigma = model_params.get('sigma', 1)      # Scale parameter for Rayleigh distribution
         return np.random.rayleigh(scale=sigma)
 
-    elif model == 'ricean':
-        # Ricean Fading Model
-        v = model_params.get('v', 1)          # LOS component
-        sigma = model_params.get('sigma', 1)  # Scattered component
+    elif model == 'ricean':                       # Ricean Fading Model
+        v = model_params.get('v', 1)              # LOS component
+        sigma = model_params.get('sigma', 1)      # Scattered component
         return np.random.rice(v, sigma)
 
-    elif model == 'free-space':
-        # Free Space Path Loss (FSPL) Model
+    elif model == 'free-space':                   # Free Space Path Loss (FSPL) Model
         f = model_params.get('frequency', 2.4e9)  # Frequency in Hz (e.g., 2.4 GHz)
         c = 3e8                                   # Speed of light in m/s
-        return 20 * np.log10(distance) + 20 * np.log10(f) - 20 * np.log10(c / (4 * np.pi))
+        fspl = 20 * np.log10(distance) + 20 * np.log10(f) - 20 * np.log10(c / (4 * np.pi))
+        return P_t - fspl
 
     else:
         raise ValueError(f"Unknown model type: {model}")
@@ -218,11 +240,11 @@ class Cell:
 
 class Container(ABC):
     @abstractmethod
-    def __init__(self, length, width, height):
+    def __init__(self, length, width, height, transmit_power=TRANSMIT_POWER):
         self.length = length
         self.width = width
         self.height = height
-        self.rf_radius = 14
+        self.transmit_power = transmit_power
         self.malicious = False
         self.jammer = False
         self.x = None
@@ -231,13 +253,13 @@ class Container(ABC):
 
 
 class Standard_Container(Container):
-    def __init__(self):
-        super().__init__(length=12, width=3, height=5)
+    def __init__(self, transmit_power=TRANSMIT_POWER):
+        super().__init__(length=12, width=3, height=5, transmit_power=transmit_power)
 
 
 class Small_Container(Container):
-    def __init__(self):
-        super().__init__(length=6, width=3, height=5)
+    def __init__(self, transmit_power=TRANSMIT_POWER):
+        super().__init__(length=6, width=3, height=5, transmit_power=transmit_power)
 
 
 def combine_plots(fig1, fig2):
@@ -250,18 +272,18 @@ if __name__ == "__main__":
     ship = Ship()
 
     ship.add_containers(":", ":", ":", "standard")
-    # ship.add_containers(":", ":-1", ":-2", "standard")
 
-    # ship.set_behaviour(":", ":", ":", malicious=True, jammer=False)
+    ship.set_max_nodes_in_plane('bays', 1, 3.5, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)
 
-    ship.set_behaviour("1:2", "0:1", "0:1", malicious=False, jammer=True)
-    ship.set_behaviour("1:2", "0:1", "-1:", malicious=False, jammer=True)
-    ship.set_behaviour("1:2", "-1:", "0:1", malicious=False, jammer=True)
-    ship.set_behaviour("1:2", "-1:", "-1:", malicious=False, jammer=True)
+    # ship.set_behaviour([1], [0], [0], malicious=True, jammer=True, transmit_power=JAMMER_POWER)
 
-    # ship.set_behaviour("1:2", "6:7", "-3:-2", malicious=False, jammer=True)
-    # ship.set_behaviour(":1", "5:6", "2:3", malicious=False, jammer=True)
+    # ship.set_behaviour("1:2", "0:1", "0:1", malicious=False, jammer=True)
+    # ship.set_behaviour("1:2", "0:1", "-1:", malicious=False, jammer=True)
+    # ship.set_behaviour("1:2", "-1:", "0:1", malicious=False, jammer=True)
+    # ship.set_behaviour("1:2", "-1:", "-1:", malicious=False, jammer=True)
 
+
+    ship.set_model('free-space')
     ship.generate_container_graph()
     analyse_graph(ship.G)
 

@@ -5,15 +5,14 @@ from tqdm import tqdm
 
 
 def analyse_graph(G):
-    total_nodes = len(G.nodes())    
-    unconnected_nodes = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]    
-    num_unconnected_nodes = len(unconnected_nodes)    
-    num_connected_nodes = total_nodes - num_unconnected_nodes    
-    connected_components = nx.number_connected_components(G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0]))    
+    total_nodes = len(G.nodes())
+    unconnected_nodes = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]
+    num_unconnected_nodes = len(unconnected_nodes)
+    num_connected_nodes = total_nodes - num_unconnected_nodes
+    connected_components = nx.number_connected_components(G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0]))
 
     num_connected = total_nodes - num_unconnected_nodes
     threshold = -(-total_nodes // 3)  # Equivalent to math.ceil(total_nodes / 3)
-
     if num_unconnected_nodes == 0:
         health = 1.0
     elif num_connected <= threshold:
@@ -21,24 +20,43 @@ def analyse_graph(G):
     else:
         health = (num_connected - threshold) / (total_nodes - threshold)
 
+    honest_nodes = [node for node, data in G.nodes(data=True) if not data['malicious']]
+    malicious_nodes = [node for node, data in G.nodes(data=True) if data['malicious']]
+    jamming_nodes = [node for node in malicious_nodes if G.nodes[node]['jammer']]
+    non_jamming_malicious_nodes = [node for node in malicious_nodes if not G.nodes[node]['jammer']]
+
+    num_honest = len(honest_nodes)
+    num_malicious = len(malicious_nodes)
+    num_jamming = len(jamming_nodes)
+    num_non_jamming_malicious = len(non_jamming_malicious_nodes)
+
     status = "Pass" if health > 0 and connected_components == 1 else "Fail"
 
-    print(f"\nTotal nodes   : {total_nodes}")
-    print(f"  Connected   : {num_connected_nodes}")
-    print(f"  Unconnected : {num_unconnected_nodes}")
-    print(f"  Affected    : {(num_unconnected_nodes / total_nodes):.2%}\n")
-    print(f"Components    : {connected_components}\n")
-    print(f"Health        : {health:.2%}\n")
-    print(f"Status        : {status}\n")
-    
+    print(f"\nTotal nodes             : {total_nodes}")
+    print(f"  Connected             : {num_connected_nodes}")
+    print(f"  Unconnected           : {num_unconnected_nodes}")
+    print(f"  Affected              : {(num_unconnected_nodes / total_nodes):.2%}\n")
+    print(f"Total Honest Nodes      : {num_honest}")
+    print(f"Total Malicious Nodes   : {num_malicious}")
+    print(f"  Non-Jamming Malicious : {num_non_jamming_malicious}")
+    print(f"  Jamming Malicious     : {num_jamming}\n")
+    print(f"Health                  : {health:.2%}\n")
+    print(f"Components              : {connected_components}\n")
+    print(f"Status                  : {status}\n")
+
     return {
         'total_nodes': total_nodes,
         'num_connected': num_connected,
         'num_unconnected': num_unconnected_nodes,
         'components': connected_components,
         'health': health,
-        'status': status
+        'status': status,
+        'num_honest': num_honest,
+        'num_malicious': num_malicious,
+        'num_non_jamming_malicious': num_non_jamming_malicious,
+        'num_jamming': num_jamming
     }
+
 
 
 def plot_container_network(ship, display=True):
@@ -80,14 +98,19 @@ def plot_container_network(ship, display=True):
     node_text = []
     node_color = []
 
-    for node in G.nodes():
-        x, y, z = pos[node]
-        degree = len(list(G.neighbors(node)))  # Get the degree of the node
+    for node in G.nodes(data=True):
+        x, y, z = pos[node[0]]
+        degree = len(list(G.neighbors(node[0])))
         node_x.append(x)
         node_y.append(y)
         node_z.append(z)
-        node_text.append(f"{node}<br>Degree: {degree}")
-        node_color.append(degree)  # Color based on degree
+        node_text.append(f"{node[0]}<br>Degree: {degree}")
+        
+        if node[1]['malicious']:
+            node_color.append('black')
+        else:
+            node_color.append(degree)
+        
         progress_bar.update(1)
 
     node_trace = go.Scatter3d(
@@ -96,13 +119,13 @@ def plot_container_network(ship, display=True):
         z=node_z,
         text=node_text,
         mode='markers',
-        # textposition='top center',
         hoverinfo='text',
         marker=dict(
             size=8,
             color=node_color,
-            colorscale='Viridis',  # Color scale for degree
-            opacity=0.8
+            colorscale='Viridis',
+            opacity=0.8,
+            line=dict(width=2, color='black')
         )
     )
 
