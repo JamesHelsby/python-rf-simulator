@@ -6,19 +6,13 @@ from tqdm import tqdm
 
 def analyse_graph(G):
     total_nodes = len(G.nodes())
-    unconnected_nodes = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]
-    num_unconnected_nodes = len(unconnected_nodes)
-    num_connected_nodes = total_nodes - num_unconnected_nodes
-    connected_components = nx.number_connected_components(G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0]))
-
-    num_connected = total_nodes - num_unconnected_nodes
-    threshold = -(-total_nodes // 3)  # Equivalent to math.ceil(total_nodes / 3)
-    if num_unconnected_nodes == 0:
-        health = 1.0
-    elif num_connected <= threshold:
-        health = 0.0
-    else:
-        health = (num_connected - threshold) / (total_nodes - threshold)
+    unconnected = [node for node in G.nodes() if len(list(G.neighbors(node))) == 0]
+    num_unconnected = len(unconnected)
+    num_connected = total_nodes - num_unconnected
+    
+    connected_subgraph = G.subgraph([n for n in G.nodes() if len(list(G.neighbors(n))) > 0])
+    connected_components = list(nx.connected_components(connected_subgraph))
+    num_connected_components = len(connected_components)
 
     honest_nodes = [node for node, data in G.nodes(data=True) if not data['malicious']]
     malicious_nodes = [node for node, data in G.nodes(data=True) if data['malicious']]
@@ -28,23 +22,32 @@ def analyse_graph(G):
     num_honest = len(honest_nodes)
     num_malicious = len(malicious_nodes)
     num_jamming = len(jamming_nodes)
-    num_non_jamming_malicious = len(non_jamming_malicious_nodes)
+    num_non_jammings = len(non_jamming_malicious_nodes)
 
-    status = "Pass" if health > 0 and connected_components == 1 else "Fail"
+    B = total_nodes - 1 - 3 * num_malicious
+    trustset_configuration = B >= (num_unconnected - num_jamming)
+
+    status = "Pass" if trustset_configuration and num_connected_components == 1 else "Fail"
 
     print(f"\nTotal nodes             : {total_nodes}")
-    print(f"  Connected             : {num_connected_nodes}")
-    print(f"  Unconnected           : {num_unconnected_nodes}")
-    print(f"  Affected              : {(num_unconnected_nodes / total_nodes):.2%}\n")
-    print(f"Total Honest Nodes      : {num_honest}")
-    print(f"Total Malicious Nodes   : {num_malicious}")
-    print(f"  Non-Jamming Malicious : {num_non_jamming_malicious}")
-    print(f"  Jamming Malicious     : {num_jamming}\n")
-    # print(f"Health                  : {health:.2%}\n")
-    print(f"Components              : {connected_components}\n")
+    print(f"  Honest Nodes          : {num_honest}")
+    print(f"  Jamming Nodes         : {num_jamming}\n")
+
+    print(f"Total disconnected      : {num_unconnected}")
+    print(f"  Potential Honest      : {num_unconnected - num_jamming}")
+    print(f"  Buffer Margin         : {B}\n")
+
+    print(f"Trustset Configuration  : {trustset_configuration}\n")
+
+    print(f"Components              : {num_connected_components}")
+    if num_connected_components > 1:
+        for i, component in enumerate(connected_components):
+            print(f"  Component {i + 1:<12}: {len(component)} nodes")
+        print()
+    else:
+        print()
+
     print(f"Status                  : {status}\n")
-
-
 
 
 def plot_container_network(ship, display=True):
@@ -130,7 +133,7 @@ def plot_container_network(ship, display=True):
     showlegend=False)
 
     if display:
-        pyo.plot(fig, filename='network_layout.html', auto_open=True)
+        pyo.plot(fig, filename='network_layout.html', auto_open=False)
 
     return fig, G
 

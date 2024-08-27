@@ -4,21 +4,22 @@ import plotly.offline as pyo
 import networkx as nx
 import numpy as np
 import random
+from math import inf
 from tqdm import tqdm
 from ship_visualizer import plot_ship_layout
 from ship_analyzer import analyse_graph, plot_container_network
 
 
 TRANSMIT_POWER = 0
-COMMUNICATION_THRESHOLD = -65
-JAMMER_POWER = 0
+COMMUNICATION_THRESHOLD = -inf
+JAMMER_POWER = 3
 
 
 class Ship:
     def __init__(self):
-        self.bays = 15
-        self.rows = 15
-        self.layers = 15
+        self.bays = 7
+        self.rows = 12
+        self.layers = 12
         self.cells = [[[Cell(x, y, z) for z in range(self.layers)] for y in range(self.rows)] for x in range(self.bays)]
         
         self.G = None
@@ -107,9 +108,20 @@ class Ship:
             if all(self._distance(node, selected_node) >= min_distance for selected_node in selected_nodes):
                 selected_nodes.append(node)
                 x, y, z = node
-                self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)
+                self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)        
 
-        # return selected_nodes
+    def set_max_nodes(self, min_distance, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
+            nodes = [(x, y, z) for x in range(self.bays) for y in range(self.rows) for z in range(self.layers)]
+            selected_nodes = []
+
+            while nodes:
+                node = random.choice(nodes)
+                nodes.remove(node)
+
+                if all(self._distance(node, selected_node) >= min_distance for selected_node in selected_nodes):
+                    selected_nodes.append(node)
+                    x, y, z = node
+                    self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)
 
     def generate_container_graph(self):        
         G = nx.Graph()
@@ -273,15 +285,10 @@ if __name__ == "__main__":
 
     ship.add_containers(":", ":", ":", "standard")
 
-    ship.set_max_nodes_in_plane('bays', 8, 3.4, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)
+    # ship.set_max_nodes_in_plane('bays', 5, 3.3, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)  # x1 Power
+    # ship.set_max_nodes_in_plane('bays', 3, 4.5, malicious=True, jammer=True, transmit_power=JAMMER_POWER)  # x2 Power
 
-    # ship.set_behaviour([1], [0], [0], malicious=True, jammer=True, transmit_power=JAMMER_POWER)
-
-    # ship.set_behaviour("1:2", "0:1", "0:1", malicious=False, jammer=True)
-    # ship.set_behaviour("1:2", "0:1", "-1:", malicious=False, jammer=True)
-    # ship.set_behaviour("1:2", "-1:", "0:1", malicious=False, jammer=True)
-    # ship.set_behaviour("1:2", "-1:", "-1:", malicious=False, jammer=True)
-
+    ship.set_max_nodes(4.8, malicious=True, jammer=True, transmit_power=JAMMER_POWER)  # x2 Power
 
     ship.set_model('free-space')
     ship.generate_container_graph()
