@@ -334,18 +334,18 @@ def combine_plots(fig1, fig2):
 
 
 if __name__ == "__main__":
-    ship = Ship()
+    ship = Ship(15, 15, 15)
 
     ship.add_containers(":", ":", ":", "standard")
 
     # ship.set_max_nodes_in_plane('bays', 5, 3.3, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)  # x1 Power
     # ship.set_max_nodes_in_plane('bays', 0, 4.5, malicious=True, jammer=True, transmit_power=JAMMER_POWER)  # x2 Power
 
-    ship.set_max_nodes(1.2, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER - 3)  # x2 Power
+    ship.set_max_nodes(3, malicious=True, jammer=True, transmit_power=0)  # x2 Power
 
     # ship.set_model('free-space')
     ship.generate_container_graph()
-    results = ship.analyse_graph()
+    results = ship.analyse_graph(verbose=True)
 
     # ship_plot = plot_ship_layout(ship, display=False)
     network_plot = plot_container_network(ship, display=True)    
