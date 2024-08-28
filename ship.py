@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
 from container import Container, Standard_Container, Small_Container
-import plotly.graph_objects as go
-import plotly.offline as pyo
+# import plotly.graph_objects as go
+# import plotly.offline as pyo
 import networkx as nx
 import numpy as np
 import random
 from math import inf
 from tqdm import tqdm
-from ship_visualizer import plot_ship_layout
-from ship_analyzer import analyse_graph, plot_container_network
+# from ship_visualizer import plot_ship_layout
+# from ship_analyzer import analyse_graph, plot_container_network
 
 
 TRANSMIT_POWER = 0
@@ -334,7 +334,7 @@ def combine_plots(fig1, fig2):
 
 
 if __name__ == "__main__":
-    ship = Ship(15, 15, 15)
+    ship = Ship(5, 5, 5)
 
     ship.add_containers(":", ":", ":", "standard")
 
@@ -348,5 +348,5 @@ if __name__ == "__main__":
     results = ship.analyse_graph(verbose=True)
 
     # ship_plot = plot_ship_layout(ship, display=False)
-    network_plot = plot_container_network(ship, display=True)    
+    # network_plot = plot_container_network(ship, display=True)    
     # combine_plots(ship_plot, network_plot)
