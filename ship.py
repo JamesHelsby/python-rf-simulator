@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 
 TRANSMIT_POWER = 0
+COMMUNICATION_THRESHOLD = -inf
 JAMMER_POWER = 3
 
 
@@ -200,7 +201,7 @@ class Ship:
                     dist = self._distance(data1['pos'], data2['pos'])
                     signal_strength = self.calculate_signal_strength(dist, data1['transmit_power'], self.model, self.model_params)
 
-                    if signal_strength > -inf:
+                    if signal_strength > COMMUNICATION_THRESHOLD:
                         G.add_edge(node1, node2, signal_strength=signal_strength)
 
         # Step 3: Process jammers and remove weaker edges

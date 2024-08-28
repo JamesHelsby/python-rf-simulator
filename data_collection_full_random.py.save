@@ -36,11 +36,9 @@ for power in tqdm(jammer_power_ranges, desc="Jammer Power"):
         ship = Ship(bays=BAYS, rows=ROWS, layers=LAYERS)
         ship.add_containers(":", ":", ":", container_type=CONTAINER_TYPE)
 
-        if TYPE == "plane":
-            ship.set_max_nodes_in_plane('bays', int(BAYS / 2), distance, malicious=True, jammer=True, transmit_power=power)
-        else:
-            ship.set_max_nodes(distance, malicious=True, jammer=True, transmit_power=power)
-
+        ship.set_max_nodes_in_plane(distance, malicious=True, jammer=True, transmit_power=power)
+        ship.set_max_nodes(distance, malicious=True, jammer=True, transmit_power=power)
+        
         ship.generate_container_graph()
         results = ship.analyse_graph()
         save_to_csv(results, power)
