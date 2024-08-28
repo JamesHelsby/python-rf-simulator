@@ -133,10 +133,10 @@ class Ship:
                         cell.front_half.malicious = malicious
                         cell.front_half.jammer = jammer
                         cell.front_half.transmit_power = transmit_power
-                    if cell.back_half:
-                        cell.back_half.malicious = malicious
-                        cell.back_half.jammer = jammer
-                        cell.back_half.transmit_power = transmit_power
+#                    if cell.back_half:
+#                        cell.back_half.malicious = malicious
+#                        cell.back_half.jammer = jammer
+#                        cell.back_half.transmit_power = transmit_power
 
     def set_max_nodes_in_plane(self, plane, index, min_distance, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
         if plane not in ["bays", "rows", "layers"]:

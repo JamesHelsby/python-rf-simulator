@@ -19,9 +19,9 @@ def plot_data():
     power = df['power']
     distance = df['distance'] / (np.sqrt((3*25)**2 + (5*25)**2) * 0.95)
     status = df['status']
-    num_jammers = df['num_jamming']
+    num_jammers = df['num_jamming'] / (25*25)
 
-    colors = status.map({'Pass': 'green', 'Fail': 'red'})
+    colors = status.map({'Pass': 'green', 'Fail': 'none'})
 
     plt.clf()
     #plt.scatter(power, distance, c=colors)
@@ -33,8 +33,8 @@ def plot_data():
 
     plt.xlim(-10, 21)
 
-    #plt.ylim(0, 1)
-    plt.ylim(0, 140)
+    plt.ylim(0, 1)
+    #plt.ylim(0, 140)
 
     plt.draw()
 
