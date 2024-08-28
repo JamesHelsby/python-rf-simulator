@@ -12,8 +12,8 @@ ITERATIONS = 2
 TYPE = "plane"
 
 # Define the ranges
-jammer_power_ranges = np.arange(-3, 15.1, 0.5)
-distance_ranges = np.arange(0, 200.1, 0.1)
+jammer_power_ranges = np.arange(18, 24.1, 0.5)
+distance_ranges = np.arange(0, 146.1, 0.1)
 
 # Shuffle the ranges to make the iterations random
 np.random.shuffle(jammer_power_ranges)
