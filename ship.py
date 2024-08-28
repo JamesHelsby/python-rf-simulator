@@ -173,6 +173,28 @@ class Ship:
                     x, y, z = node
                     self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)
 
+    def set_n_nodes(self, n, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
+        all_nodes = [(x, y, z) for x in range(self.bays) for y in range(self.rows) for z in range(self.layers)]
+        selected_nodes = random.sample(all_nodes, min(n, len(all_nodes)))
+        for x, y, z in selected_nodes:
+            self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)
+
+    def set_n_nodes_in_plane(self, plane, index, n, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
+        if plane not in ["bays", "rows", "layers"]:
+            raise ValueError("Plane must be 'bays', 'rows', or 'layers'.")
+
+        if plane == "bays":
+            nodes_in_plane = [(index, y, z) for y in range(self.rows) for z in range(self.layers)]
+        elif plane == "rows":
+            nodes_in_plane = [(x, index, z) for x in range(self.bays) for z in range(self.layers)]
+        elif plane == "layers":
+            nodes_in_plane = [(x, y, index) for x in range(self.bays) for y in range(self.rows)]
+
+        selected_nodes = random.sample(nodes_in_plane, min(n, len(nodes_in_plane)))
+
+        for x, y, z in selected_nodes:
+            self.set_behaviour([x], [y], [z], malicious=malicious, jammer=jammer, transmit_power=transmit_power)
+
     def generate_container_graph(self):        
         G = nx.Graph()
         

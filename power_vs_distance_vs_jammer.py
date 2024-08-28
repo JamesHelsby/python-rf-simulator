@@ -4,13 +4,13 @@ from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-csv_filename = "10x10x10-standard-domain.csv"
+csv_filename = "7x25x25-standard-plane.csv"
 
 def plot_data():
     df = pd.read_csv(csv_filename)
     
     power = df['power']
-    distance = df['distance']
+    distance = df['distance'] / np.sqrt((3*25)**2 + (5*25)**2)
     num_jamming = df['num_jamming']
     status = df['status']
     

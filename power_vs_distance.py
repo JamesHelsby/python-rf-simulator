@@ -1,24 +1,38 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import numpy as np
 
-csv_filename = "10x10x10-standard-domain.csv"
+csv_filename = "7x25x25-standard-plane.csv"
 
 def plot_data():
     df = pd.read_csv(csv_filename)
-    
+
+    df = df.dropna(subset=['status'])
+    df = df[df['status'].isin(['Pass', 'Fail'])]
+
+    df['power'] = pd.to_numeric(df['power'], errors='coerce')
+    df['distance'] = pd.to_numeric(df['distance'], errors='coerce')
+    df['num_jamming'] = pd.to_numeric(df['num_jamming'], errors='coerce')
+    df = df.dropna(subset=['distance', 'power'])
+
     power = df['power']
-    distance = df['distance']
+    distance = df['distance'] / (np.sqrt((3*25)**2 + (5*25)**2) * 0.95)
     status = df['status']
+    num_jammers = df['num_jamming']
     
     colors = status.map({'Pass': 'green', 'Fail': 'red'})
     
     plt.clf()
-    plt.scatter(power, distance, c=colors)
+    # plt.scatter(power, distance, c=colors)
+    plt.scatter(power, num_jammers, c=colors)
 
     plt.xlabel('Power')
-    plt.ylabel('Distance')
+    plt.ylabel('Number of Jammers')
     plt.title('Power vs Distance with Status Color-Coded')
+
+    plt.xlim(-3, 21)
+    plt.ylim(0, 140)
 
     plt.draw()
 
