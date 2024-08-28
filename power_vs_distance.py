@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-csv_filename = "7x25x25-standard-plane.csv"
+csv_filename = "7x25x25-standard-plane-number.csv"
 
 def plot_data():
     df = pd.read_csv(csv_filename)
@@ -20,18 +20,20 @@ def plot_data():
     distance = df['distance'] / (np.sqrt((3*25)**2 + (5*25)**2) * 0.95)
     status = df['status']
     num_jammers = df['num_jamming']
-    
+
     colors = status.map({'Pass': 'green', 'Fail': 'red'})
-    
+
     plt.clf()
-    # plt.scatter(power, distance, c=colors)
+    #plt.scatter(power, distance, c=colors)
     plt.scatter(power, num_jammers, c=colors)
 
     plt.xlabel('Power')
     plt.ylabel('Number of Jammers')
     plt.title('Power vs Distance with Status Color-Coded')
 
-    plt.xlim(-3, 21)
+    plt.xlim(-10, 21)
+
+    #plt.ylim(0, 1)
     plt.ylim(0, 140)
 
     plt.draw()
