@@ -6,14 +6,14 @@ from tqdm import tqdm
 BAYS = 7
 ROWS = 25
 LAYERS = 25
-CONTAINER_TYPE = "small"
+CONTAINER_TYPE = "standard"
 ITERATIONS = 2
 TYPE = "plane"
 CONTROLLER = "number" # "distance" or "number"
 
-jammer_power_ranges = np.arange(0, -9.1, 0.5)
-# distance_ranges = np.arange(0, 146.1, 0.1)
-num_nodes_ranges = list(range(0, 100))
+jammer_power_ranges = np.arange(12, 18.1, 0.5)
+distance_ranges = np.arange(0, 146.1, 0.1)
+num_nodes_ranges = list(range(0, 32))
 
 np.random.shuffle(jammer_power_ranges)
 np.random.shuffle(distance_ranges)
