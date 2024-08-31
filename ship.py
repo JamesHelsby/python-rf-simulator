@@ -258,6 +258,61 @@ class Ship:
 
         self.G = G
 
+    def generate_container_graph_cumulative(self):
+        G = nx.Graph()
+
+        # Step 1: Build nodes
+        for x in tqdm(range(self.bays), desc="Building nodes       ", leave=False):
+            for y in range(self.rows):
+                for z in range(self.layers):
+                    cell = self.cells[x][y][z]
+                    if cell.container:
+                        node_id = f"C({x},{y},{z})"
+                        G.add_node(node_id, pos=(cell.x, cell.y, cell.z), container='standard', transmit_power=cell.container.transmit_power, malicious=cell.container.malicious, jammer=cell.container.jammer)
+                    if cell.front_half:
+                        node_id = f"F({x},{y},{z})"
+                        G.add_node(node_id, pos=(cell.front_half.x, cell.front_half.y, cell.front_half.z), container='small_front', transmit_power=cell.front_half.transmit_power, malicious=cell.front_half.malicious, jammer=cell.front_half.jammer)
+                    if cell.back_half:
+                        node_id = f"B({x},{y},{z})"
+                        G.add_node(node_id, pos=(cell.back_half.x, cell.back_half.y, cell.back_half.z), container='small_back', transmit_power=cell.back_half.transmit_power, malicious=cell.back_half.malicious, jammer=cell.back_half.jammer)
+
+        # Step 2: Calculate noise floors due to jammers
+        noise_floor = {}
+        for node, data in G.nodes(data=True):
+            if data['malicious']:
+                continue
+            noise_floor[node] = 0
+            node_pos = data['pos']
+
+            for jammer_node, jammer_data in G.nodes(data=True):
+                if jammer_data['jammer']:
+                    jammer_pos = jammer_data['pos']
+                    dist = self._distance(node_pos, jammer_pos)
+                    jamming_power = self.calculate_signal_strength(dist, jammer_data['transmit_power'], self.model, self.model_params)
+
+                    noise_floor[node] += 10 ** (jamming_power / 10)
+
+            if noise_floor[node] > 0:
+                noise_floor[node] = 10 * np.log10(noise_floor[node])
+            else:
+                noise_floor[node] = -inf
+
+        # Step 3: Build edges based on signal strength above noise floor and communication threshold
+        nodes = list(G.nodes(data=True))
+        for i, (node1, data1) in tqdm(enumerate(nodes), total=len(nodes), desc="Building edges       ", leave=False):
+            if data1['malicious']:
+                continue
+
+            for j, (node2, data2) in enumerate(nodes):
+                if i < j and not data2['malicious']:
+                    dist = self._distance(data1['pos'], data2['pos'])
+                    signal_strength = self.calculate_signal_strength(dist, data1['transmit_power'], self.model, self.model_params)
+                    
+                    if signal_strength > noise_floor[node2] and signal_strength > COMMUNICATION_THRESHOLD:
+                        G.add_edge(node1, node2, signal_strength=signal_strength)
+
+        self.G = G
+
     def analyse_graph(self, verbose=False):
         total_nodes = len(self.G.nodes())
         unconnected = [node for node in self.G.nodes() if len(list(self.G.neighbors(node))) == 0]
