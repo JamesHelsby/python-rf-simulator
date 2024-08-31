@@ -1,0 +1,49 @@
+power,distance,status,total_nodes,num_honest,num_jamming,num_unconnected,num_connected,buffer_margin,trustset_configuration,num_connected_components,connected_components
+0.0,8.15796211761561,Fail,1000,897,103,136,864,690,True,18,"{'Component_1': 38, 'Component_2': 45, 'Component_3': 2, 'Component_4': 79, 'Component_5': 6, 'Component_6': 90, 'Component_7': 86, 'Component_8': 2, 'Component_9': 170, 'Component_10': 2, 'Component_11': 91, 'Component_12': 84, 'Component_13': 2, 'Component_14': 92, 'Component_15': 59, 'Component_16': 8, 'Component_17': 2, 'Component_18': 6}"
+0.0,10.341554468275925,Fail,1000,916,84,102,898,747,True,18,"{'Component_1': 78, 'Component_2': 3, 'Component_3': 2, 'Component_4': 2, 'Component_5': 90, 'Component_6': 2, 'Component_7': 178, 'Component_8': 2, 'Component_9': 86, 'Component_10': 3, 'Component_11': 2, 'Component_12': 93, 'Component_13': 87, 'Component_14': 2, 'Component_15': 180, 'Component_16': 83, 'Component_17': 3, 'Component_18': 2}"
+0.0,9.728513782922562,Fail,1000,916,84,96,904,747,True,22,"{'Component_1': 6, 'Component_2': 79, 'Component_3': 2, 'Component_4': 2, 'Component_5': 90, 'Component_6': 2, 'Component_7': 72, 'Component_8': 12, 'Component_9': 2, 'Component_10': 2, 'Component_11': 94, 'Component_12': 88, 'Component_13': 2, 'Component_14': 91, 'Component_15': 85, 'Component_16': 2, 'Component_17': 3, 'Component_18': 92, 'Component_19': 91, 'Component_20': 83, 'Component_21': 2, 'Component_22': 2}"
+0.0,13.049342569353067,Fail,1000,946,54,64,936,837,True,5,"{'Component_1': 89, 'Component_2': 285, 'Component_3': 281, 'Component_4': 190, 'Component_5': 91}"
+0.0,13.142370888339075,Fail,1000,941,59,71,929,822,True,5,"{'Component_1': 89, 'Component_2': 378, 'Component_3': 279, 'Component_4': 93, 'Component_5': 90}"
+0.0,14.11067065210722,Fail,1000,959,41,47,953,876,True,2,"{'Component_1': 858, 'Component_2': 95}"
+0.0,14.133563029590409,Fail,1000,961,39,51,949,882,True,4,"{'Component_1': 856, 'Component_2': 2, 'Component_3': 89, 'Component_4': 2}"
+0.0,13.538109179935585,Fail,1000,958,42,49,951,873,True,3,"{'Component_1': 947, 'Component_2': 2, 'Component_3': 2}"
+0.0,13.407623502192006,Fail,1000,959,41,46,954,876,True,5,"{'Component_1': 946, 'Component_2': 2, 'Component_3': 2, 'Component_4': 2, 'Component_5': 2}"
+0.0,14.932471178987193,Fail,1000,964,36,46,954,891,True,3,"{'Component_1': 91, 'Component_2': 2, 'Component_3': 861}"
+0.0,15.162975114039428,Pass,1000,965,35,38,962,894,True,1,{'Component_1': 962}
+0.0,16.225211863759583,Fail,1000,971,29,36,964,912,True,2,"{'Component_1': 869, 'Component_2': 95}"
+0.0,17.12741556068413,Pass,1000,973,27,32,968,918,True,1,{'Component_1': 968}
+0.0,15.757540347038248,Pass,1000,975,25,28,972,924,True,1,{'Component_1': 972}
+0.0,16.738296537304212,Pass,1000,977,23,25,975,930,True,1,{'Component_1': 975}
+0.0,16.804953997006148,Pass,1000,975,25,29,971,924,True,1,{'Component_1': 971}
+0.0,17.59118660750519,Pass,1000,976,24,28,972,927,True,1,{'Component_1': 972}
+0.0,17.43937111411021,Pass,1000,980,20,23,977,939,True,1,{'Component_1': 977}
+0.0,17.83944452697781,Pass,1000,980,20,25,975,939,True,1,{'Component_1': 975}
+0.0,20.58036609399803,Pass,1000,984,16,21,979,951,True,1,{'Component_1': 979}
+0.0,19.994948507893692,Pass,1000,985,15,17,983,954,True,1,{'Component_1': 983}
+0.0,20.065832451581155,Pass,1000,982,18,20,980,945,True,1,{'Component_1': 980}
+0.0,21.21460438022112,Pass,1000,983,17,19,981,948,True,1,{'Component_1': 981}
+0.0,22.787079871638472,Pass,1000,986,14,17,983,957,True,1,{'Component_1': 983}
+0.0,23.670215095014665,Pass,1000,984,16,18,982,951,True,1,{'Component_1': 982}
+0.0,22.34867775374,Pass,1000,987,13,15,985,960,True,1,{'Component_1': 985}
+0.0,23.743925251234547,Pass,1000,987,13,13,987,960,True,1,{'Component_1': 987}
+0.0,25.691806426213354,Pass,1000,991,9,9,991,972,True,1,{'Component_1': 991}
+0.0,23.621848059852447,Pass,1000,987,13,14,986,960,True,1,{'Component_1': 986}
+0.0,26.427857865565556,Pass,1000,990,10,12,988,969,True,1,{'Component_1': 988}
+0.0,24.93724877313417,Pass,1000,991,9,12,988,972,True,1,{'Component_1': 988}
+0.1,8.944083907799746,Fail,1000,889,111,285,715,666,True,27,"{'Component_1': 11, 'Component_2': 3, 'Component_3': 2, 'Component_4': 21, 'Component_5': 6, 'Component_6': 2, 'Component_7': 91, 'Component_8': 2, 'Component_9': 3, 'Component_10': 4, 'Component_11': 31, 'Component_12': 15, 'Component_13': 2, 'Component_14': 3, 'Component_15': 85, 'Component_16': 72, 'Component_17': 76, 'Component_18': 76, 'Component_19': 32, 'Component_20': 3, 'Component_21': 24, 'Component_22': 4, 'Component_23': 90, 'Component_24': 19, 'Component_25': 15, 'Component_26': 12, 'Component_27': 11}"
+0.1,10.114697311298332,Fail,1000,917,83,235,765,750,True,15,"{'Component_1': 58, 'Component_2': 5, 'Component_3': 2, 'Component_4': 24, 'Component_5': 57, 'Component_6': 83, 'Component_7': 78, 'Component_8': 74, 'Component_9': 4, 'Component_10': 85, 'Component_11': 70, 'Component_12': 79, 'Component_13': 80, 'Component_14': 63, 'Component_15': 3}"
+0.1,10.377454688126543,Fail,1000,916,84,237,763,747,True,14,"{'Component_1': 2, 'Component_2': 68, 'Component_3': 161, 'Component_4': 73, 'Component_5': 38, 'Component_6': 123, 'Component_7': 15, 'Component_8': 54, 'Component_9': 2, 'Component_10': 79, 'Component_11': 82, 'Component_12': 3, 'Component_13': 61, 'Component_14': 2}"
+0.1,12.93324675698732,Fail,1000,945,55,150,850,834,True,8,"{'Component_1': 78, 'Component_2': 174, 'Component_3': 2, 'Component_4': 260, 'Component_5': 83, 'Component_6': 87, 'Component_7': 83, 'Component_8': 83}"
+0.1,12.289109609781415,Fail,1000,943,57,154,846,828,True,8,"{'Component_1': 76, 'Component_2': 84, 'Component_3': 259, 'Component_4': 179, 'Component_5': 83, 'Component_6': 89, 'Component_7': 71, 'Component_8': 5}"
+0.1,14.130141734302635,Fail,1000,960,40,110,890,879,True,3,"{'Component_1': 81, 'Component_2': 726, 'Component_3': 83}"
+0.1,13.558240290131751,Fail,1000,958,42,113,887,873,True,3,"{'Component_1': 82, 'Component_2': 723, 'Component_3': 82}"
+0.1,13.604743309008006,Fail,1000,960,40,110,890,879,True,4,"{'Component_1': 453, 'Component_2': 358, 'Component_3': 2, 'Component_4': 77}"
+0.1,13.316660269134072,Fail,1000,958,42,114,886,873,True,2,"{'Component_1': 79, 'Component_2': 807}"
+0.1,13.777680613919403,Fail,1000,963,37,98,902,888,True,2,"{'Component_1': 85, 'Component_2': 817}"
+0.1,14.956475601377258,Pass,1000,968,32,86,914,903,True,1,{'Component_1': 914}
+0.1,16.392449775771336,Pass,1000,970,30,79,921,909,True,1,{'Component_1': 921}
+0.1,16.38187942018503,Fail,1000,974,26,71,929,921,True,2,"{'Component_1': 843, 'Component_2': 86}"
+0.1,16.386290954139568,Pass,1000,973,27,72,928,918,True,1,{'Component_1': 928}
+0.1,15.27217573425666,Pass,1000,974,26,70,930,921,True,1,{'Component_1': 930}
+0.1,17.49348945071477,Pass,1000,980,20,52,948,939,True,1,{'Component_1': 948}
+0.1,16.853809138219216,Pass,1000,975,25,66,934,924,True,1,{'Component_1': 934}

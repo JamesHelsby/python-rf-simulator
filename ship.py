@@ -125,18 +125,32 @@ class Ship:
             for y in y_range:
                 for z in z_range:
                     cell = self.cells[x][y][z]
+                    
                     if cell.container:
+                        # Set behavior for the standard container
                         cell.container.malicious = malicious
                         cell.container.jammer = jammer
                         cell.container.transmit_power = transmit_power
-                    if cell.front_half:
-                        cell.front_half.malicious = malicious
-                        cell.front_half.jammer = jammer
-                        cell.front_half.transmit_power = transmit_power
-#                    if cell.back_half:
-#                        cell.back_half.malicious = malicious
-#                        cell.back_half.jammer = jammer
-#                        cell.back_half.transmit_power = transmit_power
+                    else:
+                        # If container is None, randomly select front or back half
+                        if cell.front_half and cell.back_half:
+                            selected_half = random.choice([cell.front_half, cell.back_half])
+                            selected_half.malicious = malicious
+                            selected_half.jammer = jammer
+                            selected_half.transmit_power = transmit_power
+                            continue
+
+                    # # Set behavior for the front half if it exists
+                    # if cell.front_half:
+                    #     cell.front_half.malicious = malicious
+                    #     cell.front_half.jammer = jammer
+                    #     cell.front_half.transmit_power = transmit_power
+
+                    # # Set behavior for the back half if it exists
+                    # if cell.back_half:
+                    #     cell.back_half.malicious = malicious
+                    #     cell.back_half.jammer = jammer
+                    #     cell.back_half.transmit_power = transmit_power
 
     def set_max_nodes_in_plane(self, plane, index, min_distance, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
         if plane not in ["bays", "rows", "layers"]:

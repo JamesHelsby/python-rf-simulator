@@ -1,6 +1,6 @@
 import csv
 
-csv_filename = "7x25x25-small-plane-number.csv"
+csv_filename = "7x25x25-standard-plane-number.csv"
 expected_fields = 13  # The expected number of fields per line
 
 def find_garbled_lines(csv_filename, expected_fields):

@@ -7,7 +7,7 @@ import ast
 import csv
 
 RATIO = 0.7
-csv_filename = "7x25x25-standard-plane-number.csv"
+csv_filename = "20x20x20-standard-domain-number.csv"
 expected_fields = 13  # The expected number of fields per line
 
 def find_garbled_lines(csv_filename, expected_fields):
@@ -91,8 +91,8 @@ def plot_data():
     df = df.dropna(subset=['distance', 'power'])
     power = df['power']
     status = df['status']
-    distance = df['distance'] / (np.sqrt((3*25)**2 + (5*25)**2) * 0.95)
-    num_jammers = df['num_jamming'] / (25*25)
+    distance = df['distance'] / (np.sqrt((3*20)**2 + (5*20)**2 + (12*20)**2) * 0.95)
+    num_jammers = df['num_jamming'] / (20*20*20)
     classification = df['classification']
     colors = classification.map({True: 'green', False: 'red'})
     ax.cla()
