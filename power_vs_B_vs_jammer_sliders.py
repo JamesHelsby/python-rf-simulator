@@ -1,16 +1,13 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
+from matplotlib.widgets import Slider
 import ast
 import csv
-from matplotlib.widgets import Slider
 
 # Global variables for initial thresholds
-RATIO = 0.7  # Threshold for partition failure
-COMPONENT_THRESHOLD = 0.1  # Threshold for adding small components to the unconnected count
-csv_filename = "10x20x20-small-domain-number.csv"
+RATIO = 0.667  # Threshold for partition failure
+COMPONENT_THRESHOLD = 0  # Threshold for adding small components to the unconnected count
+csv_filename = "20x20x20-standard-domain-number-cumulative.csv"
 expected_fields = 13  # The expected number of fields per line
 
 def find_garbled_lines(csv_filename, expected_fields):
@@ -65,11 +62,14 @@ def read_data(ratio, component_threshold):
 
     # Load the cleaned data
     df = pd.read_csv(csv_filename)
-    df['power'] = pd.to_numeric(df['power'], errors='coerce')
-    df['distance'] = pd.to_numeric(df['distance'], errors='coerce')
-    df['total_nodes'] = pd.to_numeric(df['total_nodes'], errors='coerce')
-    df['num_jamming'] = pd.to_numeric(df['num_jamming'], errors='coerce')
-    df['num_unconnected'] = pd.to_numeric(df['num_unconnected'], errors='coerce')
+
+    # Convert columns to numeric and handle errors by coercing them to NaN
+    numeric_columns = ['power', 'total_nodes', 'num_jamming', 'num_unconnected']
+    df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric, errors='coerce')
+    df['distance'] = pd.to_numeric(df['distance'], errors='coerce')  # Allow NaN in 'distance'
+
+    # Drop rows with NaN values in any column except 'distance'
+    df = df.dropna(subset=numeric_columns)
 
     # Parse connected components to list
     def parse_connected_components(component_str):

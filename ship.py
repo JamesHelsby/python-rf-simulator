@@ -126,8 +126,8 @@ class Ship:
                 for z in z_range:
                     cell = self.cells[x][y][z]
                     
+                    # Set behavior for the standard container
                     if cell.container:
-                        # Set behavior for the standard container
                         cell.container.malicious = malicious
                         cell.container.jammer = jammer
                         cell.container.transmit_power = transmit_power
@@ -146,11 +146,11 @@ class Ship:
                     #     cell.front_half.jammer = jammer
                     #     cell.front_half.transmit_power = transmit_power
 
-                    # # Set behavior for the back half if it exists
-                    # if cell.back_half:
-                    #     cell.back_half.malicious = malicious
-                    #     cell.back_half.jammer = jammer
-                    #     cell.back_half.transmit_power = transmit_power
+                    # # # Set behavior for the back half if it exists
+                    # # if cell.back_half:
+                    # #     cell.back_half.malicious = malicious
+                    # #     cell.back_half.jammer = jammer
+                    # #     cell.back_half.transmit_power = transmit_power
 
     def set_max_nodes_in_plane(self, plane, index, min_distance, malicious=True, jammer=False, transmit_power=TRANSMIT_POWER):
         if plane not in ["bays", "rows", "layers"]:

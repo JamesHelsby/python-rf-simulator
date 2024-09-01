@@ -1,3 +1,4 @@
+import os
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
@@ -7,12 +8,12 @@ def prettify(element):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
-def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, tx_range, interference_range, success_ratio, language):
+def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, tx_range, interference_range, success_ratio, language, mote_type="cache"):
     simconf = ET.Element("simconf", version="2023090101")
     simulation = ET.SubElement(simconf, "simulation")
     
     title_prefix = "c" if language == "c" else "java"
-    ET.SubElement(simulation, "title").text = f"{title_prefix}_{rows}x{cols}x{layers}_{success_ratio}"
+    ET.SubElement(simulation, "title").text = f"{title_prefix}_{rows}x{cols}x{layers}_{success_ratio}_{mote_type}"
     ET.SubElement(simulation, "randomseed").text = "generated"
     ET.SubElement(simulation, "motedelay_us").text = "1000000"
     
@@ -58,7 +59,12 @@ def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, t
         ET.SubElement(motetype, "identifier").text = "apptype64829377"
         ET.SubElement(motetype, "description").text = "Java Mote"
         ET.SubElement(motetype, "motepath").text = "[COOJA_DIR]/build/classes/java/main"
-        ET.SubElement(motetype, "moteclass").text = "org.contikios.cooja.motes.Peer2PeerMote"
+        if mote_type == "cache":
+            ET.SubElement(motetype, "moteclass").text = "org.contikios.cooja.motes.Peer2PeerMote"    
+        if mote_type == "ttl":
+            ET.SubElement(motetype, "moteclass").text = "org.contikios.cooja.motes.Peer2PeerMoteTTL"    
+        if mote_type == "bls":
+            ET.SubElement(motetype, "moteclass").text = "org.contikios.cooja.motes.Peer2PeerMoteBLS"    
         
         interfaces = [
             "org.contikios.cooja.motes.AbstractApplicationMoteType$SimpleMoteID",
@@ -151,17 +157,16 @@ def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, t
         for key, value in plugin["bounds"].items():
             bounds.set(key, value)
     
-    pretty_xml = prettify(simconf)
-    print
-    filename = f"../Attack-the-BLOCC/simulations/{title_prefix}_{rows}x{cols}x{layers}_{success_ratio}_sim.csc"
+    pretty_xml = prettify(simconf)    
+    filename = os.path.expanduser(f"~/bitbucket/Attack-the-BLOCC/simulations/{title_prefix}_{rows}x{cols}x{layers}_{success_ratio}_{mote_type}_sim.csc")
     with open(filename, "w") as f:
         f.write(pretty_xml)
 
 
 if __name__ == "__main__":
     create_simulation_xml(
-        rows=6,
-        cols=6,
+        rows=10,
+        cols=10,
         layers=10,
         spacing_x=3, 
         spacing_y=12, 
@@ -169,5 +174,6 @@ if __name__ == "__main__":
         tx_range=14, 
         interference_range=20, 
         success_ratio=1,
-        language="java"
+        language="java",
+        mote_type="cache"
     )

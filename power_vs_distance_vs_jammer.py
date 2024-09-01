@@ -7,7 +7,7 @@ import ast
 import csv
 
 RATIO = 0.7
-csv_filename = "20x20x20-standard-domain-number.csv"
+csv_filename = "7x25x25-standard-plane-number-cumulative.csv"
 expected_fields = 13  # The expected number of fields per line
 
 def find_garbled_lines(csv_filename, expected_fields):

@@ -25,7 +25,7 @@ def open_terminal_for_display(total_motes, fifo_path):
         print(f"Failed to open terminal: {e}")
 
 def parse_simulation_file(file_path):
-    tree = ET.parse(f"../Attack-the-BLOCC/simulations/java_{file_path}_sim.csc")
+    tree = ET.parse(os.path.expanduser(f"~/bitbucket/Attack-the-BLOCC/simulations/java_{file_path}_sim.csc"))
     root = tree.getroot()
     mote_count = 0
     for node_type in root.findall(".//motetype"):
@@ -49,6 +49,7 @@ def run_cooja_simulation(config):
     tx_range = config['tx_range']
     interference_range = config['interference_range']
     success_ratio = config['success_ratio']
+    mote_type = config['mote_type']
     
     create_simulation_xml(
         rows=rows,
@@ -60,13 +61,14 @@ def run_cooja_simulation(config):
         tx_range=tx_range,
         interference_range=interference_range,
         success_ratio=success_ratio,
-        language="java"
+        language="java",
+        mote_type=mote_type
     )
 
-    simulation = f"{rows}x{cols}x{layers}_{success_ratio}"
+    simulation = f"{rows}x{cols}x{layers}_{success_ratio}_{mote_type}"
     total_motes = parse_simulation_file(simulation)
     command = ['./gradlew', 'run', f"--args=--no-gui ../../simulations/java_{simulation}_sim.csc"]
-    working_directory = '../Attack-the-BLOCC/tools/cooja'
+    working_directory = os.path.expanduser(f"~/bitbucket/Attack-the-BLOCC/tools/cooja")
     
     process = subprocess.Popen(
         command,
@@ -81,15 +83,16 @@ def run_cooja_simulation(config):
 def main():
     create_fifo()
     config = {
-        "rows": 25,
-        "cols": 25,
-        "layers": 25,
+        "rows": 10,
+        "cols": 10,
+        "layers": 10,
         "spacing_x": 3, 
         "spacing_y": 12, 
         "spacing_z": 5,
         "tx_range": 14, 
         "interference_range": 20, 
-        "success_ratio": 1
+        "success_ratio": 1,
+        "mote_type": "bls"
     }
 
     process, total_motes = run_cooja_simulation(config)

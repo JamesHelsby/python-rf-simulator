@@ -24,7 +24,7 @@ def update_progress_bars(progress_bars, entry, total_motes):
 
 def display_progress_bars(progress_bars, total_motes):
     bar_length = 50
-    notch = -(-total_motes // 3)
+    notch = -(-total_motes // 3) * 2
     for key, pb in progress_bars.items():
         progress = pb['progress']
         total = pb['total']
