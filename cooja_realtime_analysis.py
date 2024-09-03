@@ -4,7 +4,6 @@ import re
 import xml.etree.ElementTree as ET
 from gen_sim import create_simulation_xml
 
-# 'gnome-terminal' or 'terminator' for remote
 REMOTE_TERMINAL = 'terminator'
 fifo_path = "/tmp/simulation_output_fifo"
 
@@ -12,8 +11,8 @@ def create_fifo():
     if not os.path.exists(fifo_path):
         os.mkfifo(fifo_path)
 
-def open_terminal_for_display(total_motes, fifo_path):
-    command = f'python fifo_display_script.py {total_motes} {fifo_path}'
+def open_terminal_for_display(total_motes, fifo_path, mote_type):
+    command = f'python fifo_display_script.py {total_motes} {fifo_path} {mote_type}'
     try:
         if REMOTE_TERMINAL == 'gnome-terminal':
             subprocess.Popen(['gnome-terminal', '--', 'bash', '-c', f'{command} && exec bash'])
@@ -31,13 +30,6 @@ def parse_simulation_file(file_path):
     for node_type in root.findall(".//motetype"):
         mote_count += len(node_type.findall(".//mote"))
     return mote_count
-
-def parse_log_entry(entry):
-    log_pattern = re.compile(r"(?P<message_num>\d+)\|(?P<origin_node>\d+)\|(?P<attesting_node>\d+)")
-    match = log_pattern.search(entry)
-    if match:
-        return match.groupdict()
-    return None
 
 def run_cooja_simulation(config):
     rows = config['rows']
@@ -63,13 +55,13 @@ def run_cooja_simulation(config):
         interference_range=interference_range,
         success_ratio=success_ratio,
         language="java",
-        mote_type=mote_type,
-        # disturber=disturber
+        mote_type=mote_type
     )
 
     simulation = f"{rows}x{cols}x{layers}_{success_ratio}_{mote_type}{'_disturber' if disturber else ''}"
     total_motes = parse_simulation_file(simulation)
-    command = ['./gradlew', 'run', f"--args=--no-gui ../../simulations/java_{simulation}_sim.csc"]
+    # command = ['./gradlew', 'run', f"--args=--no-gui ../../simulations/java_{simulation}_sim.csc"]
+    command = ['./gradlew_parallel', 'run', f"--args=--no-gui ../../simulations/java_{simulation}_sim.csc"]
     working_directory = os.path.expanduser(f"~/bitbucket/Attack-the-BLOCC/tools/cooja")
     
     process = subprocess.Popen(
@@ -85,31 +77,43 @@ def run_cooja_simulation(config):
 def main():
     create_fifo()
     config = {
-        "rows": 3,
-        "cols": 3,
-        "layers": 3,
+        "rows": 15,
+        "cols": 15,
+        "layers": 15,
         "spacing_x": 3, 
         "spacing_y": 12, 
         "spacing_z": 5,
         "tx_range": 14, 
         "interference_range": 20, 
         "success_ratio": 1,
-        "mote_type": "ttl",
+        "mote_type": "cache",
         "disturber": False
     }
 
     process, total_motes = run_cooja_simulation(config)
-    open_terminal_for_display(total_motes, fifo_path)
+    open_terminal_for_display(total_motes, fifo_path, config['mote_type'])
 
     try:
         with open(fifo_path, 'w') as fifo:
             while True:
-                output = process.stdout.readline().strip()
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break  # End of process
                 if output:
                     fifo.write(output.strip() + '\n')
                     fifo.flush()
-                    print(output)
-                
+                    print(output.strip())
+            
+            if process.returncode != 0:
+                print(f"Simulation failed with return code {process.returncode}")
+                try:
+                    fifo.write("> TERMINATE\n")
+                    fifo.flush()
+                except BrokenPipeError:
+                    print("Reader process has already closed the FIFO.")
+
+    except BrokenPipeError:
+        print("Broken pipe error: The reader process has closed the FIFO.")
     finally:
         os.remove(fifo_path)
 
