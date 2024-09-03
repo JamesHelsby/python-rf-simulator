@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 
-csv_filename = "7x25x25-standard-plane-number.csv"
+csv_filename = "7x25x25-standard-plane-number-cumulative.csv"
 
 def plot_data():
     df = pd.read_csv(csv_filename)
@@ -24,8 +24,8 @@ def plot_data():
     colors = status.map({'Pass': 'green', 'Fail': 'none'})
 
     plt.clf()
-    #plt.scatter(power, distance, c=colors)
-    plt.scatter(power, num_jammers, c=colors)
+    plt.scatter(power, distance, c=colors)
+    # plt.scatter(power, num_jammers, c=colors)
 
     plt.xlabel('Power')
     plt.ylabel('Number of Jammers')

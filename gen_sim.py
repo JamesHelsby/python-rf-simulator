@@ -21,7 +21,7 @@ def create_simulation_xml(rows, cols, layers, spacing_x, spacing_y, spacing_z, t
     radiomedium.text = "org.contikios.cooja.radiomediums.UDGM"
     ET.SubElement(radiomedium, "transmitting_range").text = str(tx_range)
     ET.SubElement(radiomedium, "interference_range").text = str(interference_range)
-    ET.SubElement(radiomedium, "success_ratio_tx").text = str(success_ratio)
+    ET.SubElement(radiomedium, "success_ratio_tx").text = str(1)#str(success_ratio)
     ET.SubElement(radiomedium, "success_ratio_rx").text = str(success_ratio)
     
     events = ET.SubElement(simulation, "events")

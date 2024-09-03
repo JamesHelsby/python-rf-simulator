@@ -187,16 +187,17 @@ network_power = 0
 
 noise_positions = {3*5, 3*13}
 
-model.add_network_radio(6, network_power)
-model.add_noise_radio(15, noise_power + 6)
-model.add_noise_radio(24, noise_power - 6)
+# model.add_network_radio(6, network_power)
+# model.add_noise_radio(15, noise_power + 6)
+# model.add_noise_radio(24, noise_power - 6)
 
-# for dist in range(3, 3*15, 3):
-#     if dist in noise_positions:
-#         model.add_noise_radio(dist, noise_power)
-#         continue
-#     model.add_network_radio(dist, network_power)
-# model.add_network_radio(3*15, network_power)
+model.add_network_radio(0, network_power)
+for dist in range(3, 3*15, 3):
+    if dist in noise_positions:
+        model.add_noise_radio(dist, noise_power)
+        continue
+    model.add_network_radio(dist, network_power)
+model.add_network_radio(3*15, network_power)
     
 model.plot(truncate=False, fill=True, show_noise_radios=True)
 # model.plot_interactive(truncate=True)  # Plot interactively with truncation

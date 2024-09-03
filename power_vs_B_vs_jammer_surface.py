@@ -7,9 +7,11 @@ import csv
 from matplotlib.colors import ListedColormap
 from matplotlib.lines import Line2D
 
-RATIO = 2 / 3
+RATIO = 1 / 100
 COMPONENT_THRESHOLD = 0
-csv_filename = "10x20x20-small-domain-number-cumulative.csv"
+csv_filename = "./backup/10x20x20-small-domain-number-cumulative-old-reduced.csv"
+# csv_filename = "20x20x20-standard-domain-number-cumulative.csv"
+# csv_filename = "10x20x20-small-domain-number-cumulative.csv"
 expected_fields = 13
 
 ELEVATION = 15
@@ -149,6 +151,9 @@ def plot_data():
     ]
 
     ax.legend(handles=legend_elements, loc='upper right', bbox_to_anchor=(1.3, 1))
+
+    plt.savefig('plot.png', bbox_inches='tight', dpi=1000)
+    plt.savefig('plot.png', dpi=1000)
 
     plt.show()
 

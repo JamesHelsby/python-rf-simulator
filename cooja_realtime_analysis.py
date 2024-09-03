@@ -50,6 +50,7 @@ def run_cooja_simulation(config):
     interference_range = config['interference_range']
     success_ratio = config['success_ratio']
     mote_type = config['mote_type']
+    disturber = config['disturber']
     
     create_simulation_xml(
         rows=rows,
@@ -62,10 +63,11 @@ def run_cooja_simulation(config):
         interference_range=interference_range,
         success_ratio=success_ratio,
         language="java",
-        mote_type=mote_type
+        mote_type=mote_type,
+        # disturber=disturber
     )
 
-    simulation = f"{rows}x{cols}x{layers}_{success_ratio}_{mote_type}"
+    simulation = f"{rows}x{cols}x{layers}_{success_ratio}_{mote_type}{'_disturber' if disturber else ''}"
     total_motes = parse_simulation_file(simulation)
     command = ['./gradlew', 'run', f"--args=--no-gui ../../simulations/java_{simulation}_sim.csc"]
     working_directory = os.path.expanduser(f"~/bitbucket/Attack-the-BLOCC/tools/cooja")
@@ -83,16 +85,17 @@ def run_cooja_simulation(config):
 def main():
     create_fifo()
     config = {
-        "rows": 10,
-        "cols": 10,
-        "layers": 10,
+        "rows": 3,
+        "cols": 3,
+        "layers": 3,
         "spacing_x": 3, 
         "spacing_y": 12, 
         "spacing_z": 5,
         "tx_range": 14, 
         "interference_range": 20, 
         "success_ratio": 1,
-        "mote_type": "bls"
+        "mote_type": "ttl",
+        "disturber": False
     }
 
     process, total_motes = run_cooja_simulation(config)
