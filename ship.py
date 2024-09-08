@@ -8,7 +8,7 @@ import random
 from math import inf
 from tqdm import tqdm
 # from ship_visualizer import plot_ship_layout
-# from ship_analyzer import analyse_graph, plot_container_network
+from ship_analyzer import analyse_graph, plot_container_network, plot_container_network_coloured
 
 
 TRANSMIT_POWER = 0
@@ -305,11 +305,18 @@ class Ship:
 
             for j, (node2, data2) in enumerate(nodes):
                 if i < j and not data2['malicious']:
-                    dist = self._distance(data1['pos'], data2['pos'])
-                    signal_strength = self.calculate_signal_strength(dist, data1['transmit_power'], self.model, self.model_params)
-                    
-                    if signal_strength > noise_floor[node2] and signal_strength > COMMUNICATION_THRESHOLD:
-                        G.add_edge(node1, node2, signal_strength=signal_strength)
+                    # Calculate distance between nodes
+                    dist_12 = self._distance(data1['pos'], data2['pos'])
+                    dist_21 = dist_12  # Same distance between node1 and node2 in both directions
+
+                    # Calculate signal strength for both directions
+                    signal_strength_12 = self.calculate_signal_strength(dist_12, data1['transmit_power'], self.model, self.model_params)
+                    signal_strength_21 = self.calculate_signal_strength(dist_21, data2['transmit_power'], self.model, self.model_params)
+
+                    # Check if both directions meet noise floor and communication threshold requirements
+                    if (signal_strength_12 > noise_floor[node2] and signal_strength_12 > COMMUNICATION_THRESHOLD) and \
+                    (signal_strength_21 > noise_floor[node1] and signal_strength_21 > COMMUNICATION_THRESHOLD):
+                        G.add_edge(node1, node2, signal_strength=min(signal_strength_12, signal_strength_21))
 
         self.G = G
 
@@ -426,19 +433,29 @@ def combine_plots(fig1, fig2):
 
 
 if __name__ == "__main__":
-    ship = Ship(5, 5, 5)
+    domain_size = 10
+    ship = Ship(domain_size, domain_size, domain_size)
 
     ship.add_containers(":", ":", ":", "standard")
 
     # ship.set_max_nodes_in_plane('bays', 5, 3.3, malicious=True, jammer=True, transmit_power=TRANSMIT_POWER)  # x1 Power
     # ship.set_max_nodes_in_plane('bays', 0, 4.5, malicious=True, jammer=True, transmit_power=JAMMER_POWER)  # x2 Power
 
-    ship.set_max_nodes(3, malicious=True, jammer=True, transmit_power=0)  # x2 Power
+    # ship.set_n_nodes(int(domain_size ** 3 * 0.15), malicious=True, jammer=True, transmit_power=-10)
+    ship.set_n_nodes_in_plane('bays', 5, int(domain_size ** 2 * 0.4), malicious=True, jammer=True, transmit_power=-10)
+    # ship.set_behaviour([0], [1], [1], malicious=True, jammer=True, transmit_power=-6)
 
     # ship.set_model('free-space')
-    ship.generate_container_graph()
+    ship.generate_container_graph_cumulative()
     results = ship.analyse_graph(verbose=True)
 
+    camera = dict(
+        eye=dict(x=-0.7, y=1.8, z=0.85),
+        # center=dict(x=0, y=0, z=0),
+        # up=dict(x=0, y=0, z=1)
+    )
+
     # ship_plot = plot_ship_layout(ship, display=False)
-    # network_plot = plot_container_network(ship, display=True)    
+    # network_plot = plot_container_network(ship, camera, "3x3x3_small", display=True)    
+    network_plot = plot_container_network_coloured(ship, camera, "10x10x10_standard_domain_partition_equivalent", display=True) 
     # combine_plots(ship_plot, network_plot)
